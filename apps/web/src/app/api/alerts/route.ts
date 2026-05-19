@@ -19,7 +19,9 @@ export async function GET(request: Request) {
     }
   }
 
-  const alerts = await backendFetch<AlertListResponse>("/api/v1/alerts", { query });
+  const alerts = await backendFetch<AlertListResponse>("/api/v1/alerts", {
+    authToken: session.accessToken,
+    query
+  });
   return NextResponse.json(alerts);
 }
-

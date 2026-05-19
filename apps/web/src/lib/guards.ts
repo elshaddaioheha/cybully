@@ -4,7 +4,7 @@ import { getSession } from "@/lib/auth";
 
 export async function requireUser() {
   const session = await getSession();
-  if (!session?.user?.email) {
+  if (!session?.user?.email || !session.accessToken) {
     redirect("/sign-in");
   }
   return session;

@@ -15,7 +15,9 @@ type PageProps = {
 
 export default async function IncidentDetailPage({ params }: PageProps) {
   const session = await requireModerator();
-  const incident = await backendFetch<Incident>(`/api/v1/incidents/${params.id}`);
+  const incident = await backendFetch<Incident>(`/api/v1/incidents/${params.id}`, {
+    authToken: session.accessToken
+  });
 
   return (
     <AppShell session={session}>

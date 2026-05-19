@@ -1,16 +1,38 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
+from typing import Annotated
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+
+def default_env_files() -> tuple[str, ...]:
+    config_file = Path(__file__).resolve()
+    repo_root = config_file.parents[4]
+    api_root = config_file.parents[2]
+
+    candidates = (
+        repo_root / ".env",
+        repo_root / ".env.local",
+        api_root / ".env",
+        api_root / ".env.local",
+    )
+    return tuple(str(path) for path in candidates)
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=default_env_files(),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     environment: str = "development"
-    allowed_cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    allowed_cors_origins: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["http://localhost:3000"]
+    )
     backend_internal_token: str = "dev-internal-token"
     supabase_url: str | None = None
     supabase_publishable_key: str | None = None

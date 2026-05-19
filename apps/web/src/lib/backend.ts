@@ -1,6 +1,7 @@
 import { apiBaseUrl, backendInternalToken } from "@/lib/env";
 
 type BackendFetchOptions = {
+  authToken?: string | null;
   method?: "GET" | "POST" | "PATCH";
   body?: unknown;
   query?: URLSearchParams;
@@ -12,12 +13,20 @@ export async function backendFetch<T>(path: string, options: BackendFetchOptions
     options.query.forEach((value, key) => url.searchParams.set(key, value));
   }
 
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json"
+  };
+
+  if (options.authToken) {
+    headers.Authorization = `Bearer ${options.authToken}`;
+    headers.apikey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";
+  } else {
+    headers["X-Internal-Token"] = backendInternalToken();
+  }
+
   const response = await fetch(url, {
     method: options.method ?? "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Internal-Token": backendInternalToken()
-    },
+    headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
     cache: "no-store"
   });
@@ -29,4 +38,3 @@ export async function backendFetch<T>(path: string, options: BackendFetchOptions
 
   return response.json() as Promise<T>;
 }
-

@@ -2,7 +2,7 @@
 
 This repository implements the 1-week MVP plan from the system design document:
 
-- Next.js app shell with Google OAuth via Auth.js.
+- Next.js app shell with Supabase email/password auth and SSR session handling.
 - User-facing text submission flow.
 - Moderator incident queue, detail view, review actions, and polling refresh.
 - FastAPI backend with Supabase Postgres persistence, direct mini-project processing, optional RabbitMQ workers, and stubbed alert storage.
@@ -37,16 +37,19 @@ SCORER_PROVIDER=heuristic
 
 `PIPELINE_MODE=direct` removes the need for Docker, RabbitMQ, and local PostgreSQL. The API processes the text and persists the incident during the request.
 
-4. Fill in Google OAuth values in `.env`.
+4. Configure backend and moderator values in `.env`.
 
 ```text
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
-NEXTAUTH_SECRET=...
-MODERATOR_EMAILS=your-moderator-google-email@example.com
+MODERATOR_EMAILS=your-moderator-email@example.com
+```
+5. Create `apps/web/.env.local` for the public Supabase web keys.
+
+```text
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=replace-with-supabase-publishable-key
 ```
 
-5. Install and run the backend.
+6. Install and run the backend.
 
 ```powershell
 cd services/api
@@ -54,14 +57,14 @@ python -m pip install -e ".[dev]"
 uvicorn app.main:app --reload --port 8000
 ```
 
-6. Install and run the frontend.
+7. Install and run the frontend.
 
 ```powershell
 npm install
 npm run dev:web
 ```
 
-7. Open the apps.
+8. Open the apps.
 
 - Web app: http://localhost:3000
 - FastAPI docs: http://localhost:8000/docs
@@ -70,14 +73,17 @@ For this mini-project setup, the default scorer is `heuristic`, so no PyTorch or
 
 ## Manual Demo
 
-1. Sign in at http://localhost:3000/sign-in with the Google account listed in `MODERATOR_EMAILS`.
-2. Submit text at `/app`.
-3. In direct mode, the API writes the incident to Supabase during the request.
-4. Review incidents at `/moderation`.
-5. Open an incident detail page and mark it reviewed, dismissed, or escalated.
-6. Check high-severity alert stubs in the lower panel of `/moderation`.
+1. Open http://localhost:3000/sign-in.
+2. Sign in with a Supabase email/password account, or create one at `/sign-up`.
+3. New sign-ups must confirm their email before sign-in when Supabase email confirmation is enabled.
+4. To preview moderator screens immediately, sign in with an email listed in `MODERATOR_EMAILS`.
+5. Submit text at `/app`.
+6. In direct mode, the API writes the incident to Supabase during the request.
+7. Review incidents at `/moderation`.
+8. Open an incident detail page and mark it reviewed, dismissed, or escalated.
+9. Check high-severity alert stubs in the lower panel of `/moderation`.
 
-You can also use `scripts/demo_payloads.http` against the FastAPI service directly. Include `X-Internal-Token` when calling backend endpoints outside the Next.js proxy.
+You can also use `scripts/demo_payloads.http` against the FastAPI service directly. Prefer a Supabase bearer token for user-scoped calls. `X-Internal-Token` remains available as a fallback for local service-to-service or manual script use.
 
 ## Backend Development
 
@@ -133,7 +139,7 @@ npm run test:web
 - `PATCH /api/v1/incidents/{id}`: update moderation status and note.
 - `GET /api/v1/alerts`: list stubbed high-severity alerts.
 
-All `/api/v1/*` backend routes require `X-Internal-Token`. The Next.js server routes add it automatically.
+All `/api/v1/*` backend routes require either a Supabase bearer token or `X-Internal-Token`. The Next.js server routes now forward the signed-in user's Supabase access token to FastAPI.
 
 ## Optional Queue Mode
 

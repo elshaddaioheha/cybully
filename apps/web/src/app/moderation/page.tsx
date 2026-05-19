@@ -7,8 +7,13 @@ import type { AlertListResponse, IncidentListResponse } from "@/types";
 export default async function ModerationPage() {
   const session = await requireModerator();
   const [incidents, alerts] = await Promise.all([
-    backendFetch<IncidentListResponse>("/api/v1/incidents"),
-    backendFetch<AlertListResponse>("/api/v1/alerts", { query: new URLSearchParams({ limit: "10" }) })
+    backendFetch<IncidentListResponse>("/api/v1/incidents", {
+      authToken: session.accessToken
+    }),
+    backendFetch<AlertListResponse>("/api/v1/alerts", {
+      authToken: session.accessToken,
+      query: new URLSearchParams({ limit: "10" })
+    })
   ]);
 
   return (
@@ -17,4 +22,3 @@ export default async function ModerationPage() {
     </AppShell>
   );
 }
-

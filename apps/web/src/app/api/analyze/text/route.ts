@@ -18,9 +18,10 @@ export async function POST(request: Request) {
   }
 
   const response = await backendFetch<{ tracking_id: string; status: "accepted" }>("/api/v1/analyze/text", {
+    authToken: session.accessToken,
     method: "POST",
     body: {
-      user_id: session.user.email,
+      user_id: session.user.id,
       target_user_id: targetUserId,
       timestamp: new Date().toISOString(),
       text
@@ -29,4 +30,3 @@ export async function POST(request: Request) {
 
   return NextResponse.json(response, { status: 202 });
 }
-

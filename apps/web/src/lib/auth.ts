@@ -1,44 +1,61 @@
-import { getServerSession, type NextAuthOptions } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
+import type { User } from "@supabase/supabase-js";
 
 import { isModeratorEmail } from "@/lib/env";
+import { createClient } from "@/utils/supabase/server";
 
-export const authOptions: NextAuthOptions = {
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? ""
-    })
-  ],
-  callbacks: {
-    async session({ session }) {
-      const email = session.user?.email;
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          role: isModeratorEmail(email) ? "moderator" : "user"
-        }
-      };
-    }
-  },
-  pages: {
-    signIn: "/sign-in"
-  }
+export type AppSession = {
+  accessToken: string | null;
+  user: {
+    id: string;
+    email: string | null;
+    name: string | null;
+    role: "user" | "moderator";
+  };
 };
 
-export function getSession() {
-  return getServerSession(authOptions);
-}
+function userDisplayName(user: User): string | null {
+  const metadata = user.user_metadata;
+  if (metadata && typeof metadata === "object") {
+    const fullName = metadata.full_name;
+    if (typeof fullName === "string" && fullName.trim()) {
+      return fullName.trim();
+    }
 
-declare module "next-auth" {
-  interface Session {
-    user?: {
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-      role?: "user" | "moderator";
-    };
+    const name = metadata.name;
+    if (typeof name === "string" && name.trim()) {
+      return name.trim();
+    }
   }
+
+  if (user.email) {
+    return user.email.split("@")[0] ?? null;
+  }
+
+  return null;
 }
 
+export async function getSession(): Promise<AppSession | null> {
+  const supabase = createClient();
+  const {
+    data: { user },
+    error
+  } = await supabase.auth.getUser();
+
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
+
+  if (error || !user) {
+    return null;
+  }
+
+  return {
+    accessToken: session?.access_token ?? null,
+    user: {
+      id: user.id,
+      email: user.email ?? null,
+      name: userDisplayName(user),
+      role: isModeratorEmail(user.email) ? "moderator" : "user"
+    }
+  };
+}

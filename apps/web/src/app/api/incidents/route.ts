@@ -19,7 +19,9 @@ export async function GET(request: Request) {
     }
   }
 
-  const incidents = await backendFetch<IncidentListResponse>("/api/v1/incidents", { query });
+  const incidents = await backendFetch<IncidentListResponse>("/api/v1/incidents", {
+    authToken: session.accessToken,
+    query
+  });
   return NextResponse.json(incidents);
 }
-

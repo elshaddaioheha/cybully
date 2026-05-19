@@ -24,7 +24,7 @@ export default async function SettingsPage() {
           </div>
         </dl>
         <div className="mt-8">
-          <SignOutButton />
+          <SignOutButton variant="danger" />
         </div>
       </section>
     </AppShell>
