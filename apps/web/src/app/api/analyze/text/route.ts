@@ -17,16 +17,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Text and target user are required" }, { status: 400 });
   }
 
-  const response = await backendFetch<{ tracking_id: string; status: "accepted" }>("/api/v1/analyze/text", {
-    authToken: session.accessToken,
-    method: "POST",
-    body: {
-      user_id: session.user.id,
-      target_user_id: targetUserId,
-      timestamp: new Date().toISOString(),
-      text
-    }
-  });
+  try {
+    const response = await backendFetch<{ tracking_id: string; status: "accepted" }>("/api/v1/analyze/text", {
+      authToken: session.accessToken,
+      method: "POST",
+      body: {
+        user_id: session.user.id,
+        target_user_id: targetUserId,
+        timestamp: new Date().toISOString(),
+        text
+      }
+    });
 
-  return NextResponse.json(response, { status: 202 });
+    return NextResponse.json(response, { status: 202 });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message.replace(/^Backend request failed \(\d+\):\s*/, "")
+        : "Submission failed";
+    return NextResponse.json({ error: message }, { status: 503 });
+  }
 }

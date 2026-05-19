@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+import logging
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
@@ -26,6 +27,7 @@ from app.schemas import (
 from app.services.moderation import process_text_direct
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -91,6 +93,7 @@ async def analyze_text(
                 scorer=scorer,
             )
         except Exception as exc:
+            logger.exception("Direct moderation processing failed for incident %s", incident_id)
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Direct moderation processing failed.",

@@ -23,11 +23,19 @@ export function SubmitTextForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target_user_id: targetUserId, text })
       });
-      const body = await response.json();
-      if (!response.ok) {
-        throw new Error(body.error ?? "Submission failed");
+      const raw = await response.text();
+      let body: Record<string, unknown> = {};
+      if (raw) {
+        try {
+          body = JSON.parse(raw) as Record<string, unknown>;
+        } catch {
+          body = { error: raw };
+        }
       }
-      setTrackingId(body.tracking_id);
+      if (!response.ok) {
+        throw new Error(typeof body.error === "string" ? body.error : "Submission failed");
+      }
+      setTrackingId(typeof body.tracking_id === "string" ? body.tracking_id : null);
       setText("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Submission failed");
