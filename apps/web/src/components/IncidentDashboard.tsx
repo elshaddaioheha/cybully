@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { RefreshCcw } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { SeverityBadge } from "@/components/SeverityBadge";
 import type { AlertListResponse, IncidentListResponse, IncidentStatus, SeverityLevel } from "@/types";
@@ -29,7 +29,7 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
     return params.toString();
   }, [severity, status]);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     setRefreshing(true);
     try {
       const [incidentResponse, alertResponse] = await Promise.all([
@@ -45,29 +45,51 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
     } finally {
       setRefreshing(false);
     }
-  }
+  }, [query]);
 
   useEffect(() => {
     refresh();
     const id = window.setInterval(refresh, 5000);
     return () => window.clearInterval(id);
-  }, [query]);
+  }, [refresh]);
 
   return (
     <div className="space-y-6">
-      <section className="rounded-md border border-line bg-white p-5">
+      <section className="mx-auto max-w-4xl py-6 text-center">
+        <h1 className="ui-heading">Moderation Dashboard</h1>
+        <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-muted">
+          Review model outcomes, severity distribution, and alert stubs from a minimal operations grid.
+        </p>
+      </section>
+
+      <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="ui-card text-center">
+          <p className="text-sm font-bold text-ink">Total Incidents</p>
+          <p className="ui-metric mt-7">{incidents.total}</p>
+        </div>
+        <div className="ui-card text-center">
+          <p className="text-sm font-bold text-ink">High Alerts</p>
+          <p className="ui-metric mt-7">{alerts.total}</p>
+        </div>
+        <div className="ui-card text-center">
+          <p className="text-sm font-bold text-ink">Refresh</p>
+          <p className="mt-7 text-5xl font-bold leading-none text-ink">5s</p>
+        </div>
+      </section>
+
+      <section className="ui-card">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-ink">Moderation queue</h1>
-            <p className="mt-1 text-sm text-slate-600">{incidents.total} incidents match the current filters.</p>
+            <h2 className="ui-section-title">Moderation queue</h2>
+            <p className="mt-3 text-base leading-7 text-muted">{incidents.total} incidents match the current filters.</p>
           </div>
           <div className="flex flex-wrap items-end gap-3">
-            <label className="text-sm font-medium text-slate-700">
+            <label className="text-sm font-bold text-ink">
               Severity
               <select
                 value={severity}
                 onChange={(event) => setSeverity(event.target.value as "" | SeverityLevel)}
-                className="focus-ring mt-1 block h-10 rounded-md border border-line bg-white px-3"
+                className="ui-input mt-2 block h-12 min-w-32 py-2"
               >
                 {severities.map((value) => (
                   <option key={value || "all"} value={value}>
@@ -76,12 +98,12 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
                 ))}
               </select>
             </label>
-            <label className="text-sm font-medium text-slate-700">
+            <label className="text-sm font-bold text-ink">
               Status
               <select
                 value={status}
                 onChange={(event) => setStatus(event.target.value as "" | IncidentStatus)}
-                className="focus-ring mt-1 block h-10 rounded-md border border-line bg-white px-3"
+                className="ui-input mt-2 block h-12 min-w-36 py-2"
               >
                 {statuses.map((value) => (
                   <option key={value || "all"} value={value}>
@@ -93,7 +115,7 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
             <button
               type="button"
               onClick={refresh}
-              className="focus-ring inline-flex h-10 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-medium"
+              className="ui-secondary-button h-12"
             >
               <RefreshCcw size={16} aria-hidden className={isRefreshing ? "animate-spin" : ""} />
               Refresh
@@ -102,42 +124,42 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-md border border-line bg-white">
+      <section className="ui-card overflow-hidden p-0">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-line text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-normal text-slate-500">
+            <thead className="bg-field text-left text-xs font-bold uppercase tracking-normal text-muted">
               <tr>
-                <th className="px-4 py-3">Severity</th>
-                <th className="px-4 py-3">Score</th>
-                <th className="px-4 py-3">Users</th>
-                <th className="px-4 py-3">Text</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Opened</th>
+                <th className="px-6 py-4">Severity</th>
+                <th className="px-6 py-4">Score</th>
+                <th className="px-6 py-4">Users</th>
+                <th className="px-6 py-4">Text</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Opened</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {incidents.items.map((incident) => (
                 <tr key={incident.id}>
-                  <td className="px-4 py-3">
+                  <td className="px-6 py-4">
                     <SeverityBadge severity={incident.severity_level} />
                   </td>
-                  <td className="px-4 py-3 font-medium">{incident.severity_score.toFixed(2)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-6 py-4 text-lg font-bold">{incident.severity_score.toFixed(2)}</td>
+                  <td className="px-6 py-4">
                     <div className="max-w-52 truncate">{incident.user_id}</div>
-                    <div className="max-w-52 truncate text-slate-500">to {incident.target_user_id}</div>
+                    <div className="max-w-52 truncate text-muted">to {incident.target_user_id}</div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-6 py-4">
                     <Link href={`/moderation/incidents/${incident.id}`} className="line-clamp-2 max-w-xl text-brand hover:underline">
                       {incident.text}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 capitalize">{incident.status}</td>
-                  <td className="px-4 py-3 text-slate-500">{new Date(incident.created_at).toLocaleString()}</td>
+                  <td className="px-6 py-4 capitalize">{incident.status}</td>
+                  <td className="px-6 py-4 text-muted">{new Date(incident.created_at).toLocaleString()}</td>
                 </tr>
               ))}
               {incidents.items.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-8 text-center text-slate-500" colSpan={6}>
+                  <td className="px-6 py-10 text-center text-muted" colSpan={6}>
                     No incidents found.
                   </td>
                 </tr>
@@ -147,22 +169,21 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
         </div>
       </section>
 
-      <section className="rounded-md border border-line bg-white p-5">
-        <h2 className="text-base font-semibold text-ink">Stubbed high-severity alerts</h2>
+      <section className="ui-card">
+        <h2 className="ui-section-title">Stubbed high-severity alerts</h2>
         <div className="mt-3 divide-y divide-line">
           {alerts.items.map((alert) => (
             <div key={alert.id} className="py-3 text-sm">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <span className="font-medium">Incident {alert.incident_id}</span>
-                <span className="text-slate-500">{new Date(alert.created_at).toLocaleString()}</span>
+                <span className="font-bold">Incident {alert.incident_id}</span>
+                <span className="text-muted">{new Date(alert.created_at).toLocaleString()}</span>
               </div>
-              <p className="mt-1 text-slate-600">Score {alert.severity_score.toFixed(2)} sent to {alert.recipient} as {alert.delivery_state}.</p>
+              <p className="mt-1 text-muted">Score {alert.severity_score.toFixed(2)} sent to {alert.recipient} as {alert.delivery_state}.</p>
             </div>
           ))}
-          {alerts.items.length === 0 ? <p className="py-3 text-sm text-slate-500">No alert stubs yet.</p> : null}
+          {alerts.items.length === 0 ? <p className="py-3 text-sm text-muted">No alert stubs yet.</p> : null}
         </div>
       </section>
     </div>
   );
 }
-

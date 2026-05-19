@@ -1,16 +1,15 @@
 import type { SeverityLevel } from "@/types";
 
 const styles: Record<SeverityLevel, string> = {
-  low: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  medium: "border-amber-200 bg-amber-50 text-amber-800",
-  high: "border-rose-200 bg-rose-50 text-rose-700"
+  low: "bg-success text-white",
+  medium: "bg-warning text-white",
+  high: "bg-danger text-white"
 };
 
 export function SeverityBadge({ severity }: { severity: SeverityLevel }) {
   return (
-    <span className={`inline-flex rounded-md border px-2 py-1 text-xs font-semibold uppercase tracking-normal ${styles[severity]}`}>
+    <span className={`inline-flex rounded-xl px-3 py-1.5 text-xs font-bold uppercase tracking-normal ${styles[severity]}`}>
       {severity}
     </span>
   );
 }
-

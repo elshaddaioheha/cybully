@@ -12,9 +12,8 @@ export async function requireUser() {
 
 export async function requireModerator() {
   const session = await requireUser();
-  if (session.user.role !== "moderator") {
+  if (session.user?.role !== "moderator") {
     redirect("/app");
   }
   return session;
 }
-

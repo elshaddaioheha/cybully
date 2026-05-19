@@ -19,41 +19,40 @@ export function AppShell({ session, children }: AppShellProps) {
 
   return (
     <div className="min-h-screen bg-surface">
-      <header className="border-b border-line bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <Link href="/app" className="flex items-center gap-2 text-sm font-semibold text-ink">
-            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-brand text-white">
+      <header className="bg-surface">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between gap-4">
+            <Link href="/app" className="flex items-center gap-3 text-sm font-bold text-ink">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand text-white">
               <FileText size={18} aria-hidden />
             </span>
             Cybully Safety
           </Link>
-          <div className="flex items-center gap-3 text-sm text-slate-600">
-            <span className="hidden sm:inline">{session.user?.email}</span>
-            <span className="rounded-md border border-line px-2 py-1 text-xs font-medium uppercase tracking-normal">
+            <div className="flex items-center gap-3 text-sm text-muted">
+              <span className="hidden sm:inline">{session.user?.email}</span>
+              <span className="rounded-xl border border-line bg-white px-3 py-2 text-xs font-bold uppercase tracking-normal">
               {role}
             </span>
+            </div>
           </div>
+          <nav className="flex gap-2 overflow-x-auto">
+            {visibleLinks.map((link) => {
+              const Icon = link.icon;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-line bg-white px-4 py-2 text-sm font-bold text-ink shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:border-brand hover:text-brand"
+                >
+                  <Icon size={17} aria-hidden />
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
       </header>
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[220px_1fr] lg:px-8">
-        <nav className="flex gap-2 overflow-x-auto lg:flex-col">
-          {visibleLinks.map((link) => {
-            const Icon = link.icon;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="flex min-h-10 items-center gap-2 rounded-md border border-line bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:border-brand hover:text-brand"
-              >
-                <Icon size={17} aria-hidden />
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <main>{children}</main>
-      </div>
+      <main className="mx-auto max-w-6xl px-4 pb-12 sm:px-6 lg:px-8">{children}</main>
     </div>
   );
 }
-

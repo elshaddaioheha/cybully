@@ -7,11 +7,11 @@ export default async function SubmitPage() {
 
   return (
     <AppShell session={session}>
-      <div className="space-y-6">
-        <section>
-          <h1 className="text-xl font-semibold text-ink">Submit text for analysis</h1>
-          <p className="mt-1 max-w-2xl text-sm text-slate-600">
-            The backend accepts the payload immediately, runs Detoxify in the worker pipeline, and persists the incident asynchronously.
+      <div className="space-y-10">
+        <section className="mx-auto max-w-4xl py-6 text-center">
+          <h1 className="ui-heading">Cyberbullying Detection Console</h1>
+          <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-muted">
+            Submit text, queue analysis, and review the moderation outcome from a focused safety operations workspace.
           </p>
         </section>
         <SubmitTextForm />
@@ -19,4 +19,3 @@ export default async function SubmitPage() {
     </AppShell>
   );
 }
-

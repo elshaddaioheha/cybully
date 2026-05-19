@@ -36,39 +36,21 @@ Completed:
 Verification completed:
 
 - `python -m compileall services/api/app` passed.
+- Clean frontend dependency installation completed with `npm install`.
+- `package-lock.json` was generated.
+- `npm run lint:web` passed with no warnings or errors.
+- `npm run build:web` passed.
+- `npm run test:web` passed.
+- Tailwind/PostCSS is now using `apps/web/postcss.config.js` in CommonJS format.
 
 Verification not completed:
 
-- Frontend dependency installation was interrupted/timed out.
-- `node_modules` exists, but `package-lock.json` does not. Treat the frontend dependency state as partial.
-- `npm run lint:web`, `npm run build:web`, and `npm run test:web` have not been completed.
 - Backend dependency installation and `pytest` have not been completed.
 - Docker Compose build/run has not been completed.
 
 ## Immediate Continuation Instructions
 
-1. Check whether an old Node process is still running.
-
-```powershell
-Get-Process node,npm -ErrorAction SilentlyContinue
-```
-
-2. If the previous install is still running or the partial install behaves strangely, stop the stale process from Task Manager or with `Stop-Process` after confirming it belongs to this workspace.
-
-3. Stabilize frontend dependencies.
-
-```powershell
-npm install
-```
-
-If install fails because the partial `node_modules` is inconsistent, remove `node_modules` and retry:
-
-```powershell
-Remove-Item -Recurse -Force node_modules
-npm install
-```
-
-4. Create the local environment file.
+1. Create the local environment file if it does not exist yet.
 
 ```powershell
 Copy-Item .env.example .env
@@ -83,7 +65,7 @@ GOOGLE_CLIENT_SECRET=...
 MODERATOR_EMAILS=your-google-email@example.com
 ```
 
-5. Run frontend checks.
+2. Re-run frontend checks after any further UI changes.
 
 ```powershell
 npm run lint:web
@@ -91,7 +73,7 @@ npm run build:web
 npm run test:web
 ```
 
-6. Run backend checks. Prefer Python 3.11 because the Docker image and ML stack target 3.11.
+3. Run backend checks. Prefer Python 3.11 because the Docker image and ML stack target 3.11.
 
 ```powershell
 cd services/api
@@ -99,14 +81,14 @@ python -m pip install -e ".[dev]"
 pytest
 ```
 
-7. Run the full local stack.
+4. Run the full local stack.
 
 ```powershell
 cd C:\Users\HP\Desktop\cybully
 docker compose up --build
 ```
 
-8. Open the local services.
+5. Open the local services.
 
 - Web app: `http://localhost:3000`
 - FastAPI docs: `http://localhost:8000/docs`
@@ -118,10 +100,9 @@ RabbitMQ credentials are `cybully` / `cybully`.
 
 ### Phase 0: Stabilize the Scaffold
 
-- Complete `npm install` and commit the generated `package-lock.json`.
-- Run frontend lint, test, and build checks.
+- Commit the generated `package-lock.json` and current frontend fixes.
 - Install backend dev dependencies and run `pytest`.
-- Fix any TypeScript, lint, or Python test failures found by those checks.
+- Fix any Python test failures found by backend checks.
 
 ### Phase 1: Validate Backend Pipeline
 
@@ -171,4 +152,3 @@ RabbitMQ credentials are `cybully` / `cybully`.
 - The current app shell is intentionally lean and operational. It is not a full social network product.
 - Email delivery is stubbed by design; alert events are stored in PostgreSQL instead of being sent.
 - The local machine currently reports Python 3.13, but the Docker backend uses Python 3.11. Use Docker or a Python 3.11 environment for the ML stack.
-

@@ -4,12 +4,22 @@
 
 :root {
   color-scheme: light;
+  --canvas: #f8f9fa;
+  --card: #ffffff;
+  --ink: #101418;
+  --muted: #5f6872;
+  --line: #d9dee5;
+  --field: #f3f6f8;
+  --brand: #1f8aa8;
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
 body {
   margin: 0;
-  background: #f7f9fc;
-  color: #17202a;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 400;
 }
 
 button,
@@ -23,3 +33,48 @@ select {
   @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;
 }
 
+@layer components {
+  .ui-card {
+    @apply rounded-xl border border-line bg-white p-6;
+    box-shadow: var(--shadow-card);
+  }
+
+  .ui-card-subtle {
+    @apply rounded-xl border border-line bg-field p-6;
+  }
+
+  .ui-heading {
+    @apply text-4xl font-normal leading-tight text-ink md:text-5xl;
+    letter-spacing: -0.02em;
+  }
+
+  .ui-section-title {
+    @apply text-2xl font-normal leading-tight text-ink;
+    letter-spacing: -0.02em;
+  }
+
+  .ui-label {
+    @apply mb-2 block text-sm font-bold text-ink;
+  }
+
+  .ui-input {
+    @apply focus-ring w-full rounded-xl border border-line bg-field px-4 py-3 text-base font-normal text-ink placeholder:text-slate-400;
+  }
+
+  .ui-primary-button {
+    @apply focus-ring inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-center text-base font-bold text-white shadow-none disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .ui-secondary-button {
+    @apply focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 py-2 text-sm font-bold text-ink shadow-none disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .ui-metric {
+    @apply text-center text-6xl font-bold leading-none text-ink;
+  }
+
+  .ui-alert-block {
+    @apply rounded-xl px-6 py-8 text-center text-4xl font-bold leading-tight text-white;
+    letter-spacing: -0.02em;
+  }
+}

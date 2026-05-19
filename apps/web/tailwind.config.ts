@@ -5,10 +5,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#17202a",
-        line: "#d8dee8",
-        surface: "#f7f9fc",
-        brand: "#0f766e"
+        ink: "#101418",
+        muted: "#5f6872",
+        line: "#d9dee5",
+        field: "#f3f6f8",
+        surface: "#f8f9fa",
+        brand: "#1f8aa8",
+        danger: "#c9342c",
+        warning: "#d88916",
+        success: "#15845f"
       }
     }
   },
@@ -16,4 +21,3 @@ const config: Config = {
 };
 
 export default config;
-

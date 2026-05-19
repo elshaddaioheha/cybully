@@ -39,9 +39,9 @@ export function IncidentReviewPanel({ incident }: { incident: Incident }) {
   }
 
   return (
-    <section className="rounded-md border border-line bg-white p-5">
-      <h2 className="text-base font-semibold text-ink">Review action</h2>
-      <label htmlFor="review_note" className="mt-4 block text-sm font-medium text-slate-700">
+    <section className="ui-card">
+      <h2 className="ui-section-title">Review action</h2>
+      <label htmlFor="review_note" className="ui-label mt-6">
         Moderator note
       </label>
       <textarea
@@ -49,9 +49,9 @@ export function IncidentReviewPanel({ incident }: { incident: Incident }) {
         rows={5}
         value={note}
         onChange={(event) => setNote(event.target.value)}
-        className="focus-ring mt-1 w-full rounded-md border border-line px-3 py-2"
+        className="ui-input resize-none"
       />
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {actions.map((action) => {
           const Icon = action.icon;
           return (
@@ -60,7 +60,7 @@ export function IncidentReviewPanel({ incident }: { incident: Incident }) {
               type="button"
               onClick={() => update(action.status)}
               disabled={Boolean(isSubmitting)}
-              className="focus-ring inline-flex min-h-10 items-center gap-2 rounded-md border border-line bg-white px-3 py-2 text-sm font-medium disabled:opacity-60"
+              className="ui-secondary-button"
             >
               <Icon size={16} aria-hidden />
               {isSubmitting === action.status ? "Saving" : action.label}
@@ -68,8 +68,7 @@ export function IncidentReviewPanel({ incident }: { incident: Incident }) {
           );
         })}
       </div>
-      {error ? <p className="mt-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
+      {error ? <p className="mt-4 rounded-xl bg-danger px-4 py-3 text-center text-base font-bold text-white">{error}</p> : null}
     </section>
   );
 }
-
