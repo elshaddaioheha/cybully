@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.security import require_internal_token
 from app.db import get_session
+from app.ml.factory import create_text_scorer
 from app.queues import RabbitMQBroker
 from app.repository import get_incident, list_alerts, list_incidents, update_incident
 from app.schemas import (
@@ -22,14 +23,17 @@ from app.schemas import (
     IncidentUpdateRequest,
     InferenceTask,
 )
+from app.services.moderation import process_text_direct
 
 settings = get_settings()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    if not hasattr(app.state, "broker"):
+    if settings.pipeline_mode == "queue" and not hasattr(app.state, "broker"):
         app.state.broker = RabbitMQBroker(settings)
+    if settings.pipeline_mode == "direct" and not hasattr(app.state, "scorer"):
+        app.state.scorer = create_text_scorer(settings)
     try:
         yield
     finally:
@@ -50,7 +54,12 @@ app.add_middleware(
 
 @app.get("/health")
 async def health() -> dict[str, str]:
-    return {"status": "ok", "environment": settings.environment}
+    return {
+        "status": "ok",
+        "environment": settings.environment,
+        "pipeline_mode": settings.pipeline_mode,
+        "scorer_provider": settings.scorer_provider,
+    }
 
 
 @app.post(
@@ -59,9 +68,30 @@ async def health() -> dict[str, str]:
     status_code=status.HTTP_202_ACCEPTED,
     dependencies=[Depends(require_internal_token)],
 )
-async def analyze_text(request: Request, payload: AnalyzeTextRequest) -> AnalyzeTextResponse:
+async def analyze_text(
+    request: Request,
+    payload: AnalyzeTextRequest,
+    session: AsyncSession = Depends(get_session),
+) -> AnalyzeTextResponse:
     incident_id = str(uuid4())
     task = InferenceTask(incident_id=incident_id, **payload.model_dump())
+
+    if settings.pipeline_mode == "direct":
+        scorer = getattr(request.app.state, "scorer", create_text_scorer(settings))
+        try:
+            await process_text_direct(
+                task=task,
+                session=session,
+                settings=settings,
+                scorer=scorer,
+            )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Direct moderation processing failed.",
+            ) from exc
+        return AnalyzeTextResponse(tracking_id=incident_id)
+
     broker: RabbitMQBroker = request.app.state.broker
     try:
         await broker.publish_json(settings.inference_task_queue, task.model_dump(mode="json"))

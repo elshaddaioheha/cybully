@@ -15,6 +15,8 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://cybully:cybully@localhost:5432/cybully"
     rabbitmq_url: str = "amqp://cybully:cybully@localhost:5672/"
+    pipeline_mode: str = "queue"
+    scorer_provider: str = "heuristic"
 
     inference_task_queue: str = "inference_task_queue"
     persistence_queue: str = "persistence_queue"
@@ -40,6 +42,20 @@ class Settings(BaseSettings):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
 
+    @field_validator("pipeline_mode")
+    @classmethod
+    def validate_pipeline_mode(cls, value: str) -> str:
+        if value not in {"queue", "direct"}:
+            raise ValueError("pipeline_mode must be queue or direct")
+        return value
+
+    @field_validator("scorer_provider")
+    @classmethod
+    def validate_scorer_provider(cls, value: str) -> str:
+        if value not in {"heuristic", "detoxify"}:
+            raise ValueError("scorer_provider must be heuristic or detoxify")
+        return value
+
     @property
     def risk_weight_total(self) -> float:
         return self.risk_weight_intent + self.risk_weight_repetition + self.risk_weight_aggression
@@ -48,4 +64,3 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-

@@ -7,7 +7,8 @@ The MVP scaffold has been implemented in `C:\Users\HP\Desktop\cybully`.
 Completed:
 
 - Root monorepo structure with `apps/web`, `services/api`, and `scripts`.
-- Docker Compose for PostgreSQL, RabbitMQ, FastAPI, inference worker, persistence worker, alert worker, and Next.js.
+- Supabase-friendly direct mode for hosted Postgres without Docker.
+- Optional Docker Compose for PostgreSQL, RabbitMQ, FastAPI, inference worker, persistence worker, alert worker, and Next.js.
 - FastAPI backend with:
   - `POST /api/v1/analyze/text`
   - `GET /api/v1/incidents`
@@ -15,12 +16,14 @@ Completed:
   - `PATCH /api/v1/incidents/{id}`
   - `GET /api/v1/alerts`
   - internal token protection via `X-Internal-Token`
-- RabbitMQ queue abstraction and worker entrypoints:
+- Direct text moderation mode that analyzes and persists in the API request.
+- RabbitMQ queue abstraction and optional worker entrypoints:
   - `app.workers.inference`
   - `app.workers.persistence`
   - `app.workers.alerts`
 - SQLAlchemy models, Alembic migration, repository helpers, and severity scoring.
-- Detoxify model adapter, loaded lazily by the inference worker.
+- Heuristic mini-project scorer by default, with optional Detoxify model adapter for heavier ML mode.
+- Supabase schema SQL in `supabase/schema.sql`.
 - Next.js app shell with:
   - Google OAuth through Auth.js
   - `/sign-in`
@@ -45,10 +48,11 @@ Verification completed:
 - Backend dependency installation completed with `python -m pip install -e ".[dev]"`.
 - `python -m pytest` passed for backend tests.
 - FastAPI startup/shutdown now uses a lifespan handler instead of deprecated `on_event` hooks.
+- Supabase URL normalization supports async app URLs and sync Alembic URLs with SSL.
 
 Verification not completed:
 
-- Docker Compose build/run has not been completed because `docker` is not available on PATH in this environment.
+- Live Supabase connection validation has not been completed because credentials are not present in this workspace.
 
 ## Immediate Continuation Instructions
 
@@ -65,7 +69,12 @@ NEXTAUTH_SECRET=...
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 MODERATOR_EMAILS=your-google-email@example.com
+DATABASE_URL=postgresql+asyncpg://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres?ssl=require
+PIPELINE_MODE=direct
+SCORER_PROVIDER=heuristic
 ```
+
+Run `supabase/schema.sql` in the Supabase SQL editor before the first API write.
 
 2. Re-run frontend checks after any further UI changes.
 
@@ -83,20 +92,30 @@ python -m pip install -e ".[dev]"
 pytest
 ```
 
-4. Run the full local stack.
+4. Run the mini-project backend locally.
+
+```powershell
+cd services/api
+uvicorn app.main:app --reload --port 8000
+```
+
+5. Run the frontend.
+
+```powershell
+npm run dev:web
+```
+
+6. Optional: run the full queue stack later.
 
 ```powershell
 cd C:\Users\HP\Desktop\cybully
 docker compose up --build
 ```
 
-5. Open the local services.
+7. Open the local services.
 
 - Web app: `http://localhost:3000`
 - FastAPI docs: `http://localhost:8000/docs`
-- RabbitMQ management: `http://localhost:15672`
-
-RabbitMQ credentials are `cybully` / `cybully`.
 
 ## Roadmap
 
@@ -104,21 +123,19 @@ RabbitMQ credentials are `cybully` / `cybully`.
 
 - Commit the generated `package-lock.json` and current frontend fixes.
 - Commit the backend packaging/testability fixes.
-- Install Docker Desktop or make Docker available on PATH for local Compose validation.
+- Add Supabase credentials and run `supabase/schema.sql`.
+- Validate direct mode against live Supabase.
 
-### Phase 1: Validate Backend Pipeline
+### Phase 1: Validate Supabase Direct Backend
 
-- Start PostgreSQL and RabbitMQ through Docker Compose.
-- Run `alembic upgrade head` inside the API container.
+- Start the FastAPI backend locally with `PIPELINE_MODE=direct`.
 - Submit sample payloads from `scripts/demo_payloads.http`.
-- Confirm messages flow through:
-  - FastAPI intake
-  - RabbitMQ `inference_task_queue`
-  - Detoxify inference worker
-  - `persistence_queue`
-  - PostgreSQL incident rows
-  - `alert_dispatch_queue` for high-severity events
-  - alert stub rows
+- Confirm FastAPI intake, scoring, Supabase incident rows, and high-severity alert stub rows.
+
+### Phase 1B: Optional Queue Pipeline
+
+- Run RabbitMQ and workers only if the project grows beyond direct mode.
+- Set `PIPELINE_MODE=queue` and optionally `SCORER_PROVIDER=detoxify`.
 
 ### Phase 2: Validate Frontend App Shell
 

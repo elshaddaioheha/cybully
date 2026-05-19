@@ -6,6 +6,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from app.core.config import get_settings
+from app.core.database_url import sync_database_url
 from app.models import Base
 
 config = context.config
@@ -17,8 +18,7 @@ target_metadata = Base.metadata
 
 
 def _sync_database_url() -> str:
-    url = get_settings().database_url
-    return url.replace("+asyncpg", "")
+    return sync_database_url(get_settings().database_url)
 
 
 def run_migrations_offline() -> None:
@@ -52,4 +52,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-
