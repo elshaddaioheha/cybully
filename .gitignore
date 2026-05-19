@@ -16,3 +16,7 @@ coverage/
 htmlcov/
 .DS_Store
 *.log
+build_output*.txt
+dev_output*.txt
+*.stdout.log
+*.stderr.log

@@ -7,15 +7,16 @@ The MVP scaffold has been implemented in `C:\Users\HP\Desktop\cybully`.
 Completed:
 
 - Root monorepo structure with `apps/web`, `services/api`, and `scripts`.
-- Supabase-friendly direct mode for hosted Postgres without Docker.
-- Optional Docker Compose for PostgreSQL, RabbitMQ, FastAPI, inference worker, persistence worker, alert worker, and Next.js.
+- Supabase direct mode for hosted Postgres without requiring Docker Desktop.
+- Optional Docker Compose for the fuller queue-based stack, but it is no longer the default path.
 - FastAPI backend with:
   - `POST /api/v1/analyze/text`
   - `GET /api/v1/incidents`
   - `GET /api/v1/incidents/{id}`
   - `PATCH /api/v1/incidents/{id}`
   - `GET /api/v1/alerts`
-  - internal token protection via `X-Internal-Token`
+  - Supabase bearer-token validation against Supabase Auth
+  - `X-Internal-Token` fallback for local service-to-service calls
 - Direct text moderation mode that analyzes and persists in the API request.
 - RabbitMQ queue abstraction and optional worker entrypoints:
   - `app.workers.inference`
@@ -25,8 +26,10 @@ Completed:
 - Heuristic mini-project scorer by default, with optional Detoxify model adapter for heavier ML mode.
 - Supabase schema SQL in `supabase/schema.sql`.
 - Next.js app shell with:
-  - Google OAuth through Auth.js
+  - Supabase email/password auth
+  - public landing page at `/`
   - `/sign-in`
+  - `/sign-up`
   - `/app`
   - `/moderation`
   - `/moderation/incidents/[id]`
@@ -38,21 +41,16 @@ Completed:
 
 Verification completed:
 
-- `python -m compileall services/api/app` passed.
-- Clean frontend dependency installation completed with `npm install`.
-- `package-lock.json` was generated.
 - `npm run lint:web` passed with no warnings or errors.
-- `npm run build:web` passed.
-- `npm run test:web` passed.
-- Tailwind/PostCSS is now using `apps/web/postcss.config.js` in CommonJS format.
-- Backend dependency installation completed with `python -m pip install -e ".[dev]"`.
 - `python -m pytest` passed for backend tests.
-- FastAPI startup/shutdown now uses a lifespan handler instead of deprecated `on_event` hooks.
-- Supabase URL normalization supports async app URLs and sync Alembic URLs with SSL.
+- `POST /api/v1/analyze/text` returned `202 Accepted` against the live FastAPI service.
+- Incident rows are persisting into Supabase Postgres in direct mode.
+- Live setup works with the Supabase Session Pooler connection string.
 
 Verification not completed:
 
-- Live Supabase connection validation has not been completed because credentials are not present in this workspace.
+- Real end-to-end browser verification of the signed-in submit flow after the final API restart has not yet been repeated.
+- Moderator review actions against real signed-in traffic still need one focused pass.
 
 ## Immediate Continuation Instructions
 
@@ -65,16 +63,14 @@ Copy-Item .env.example .env
 Fill in:
 
 ```text
-NEXTAUTH_SECRET=...
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
 MODERATOR_EMAILS=your-google-email@example.com
-DATABASE_URL=postgresql+asyncpg://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres?ssl=require
+DATABASE_URL=postgresql://postgres.YOUR_PROJECT_REF:YOUR_PERCENT_ENCODED_PASSWORD@aws-1-YOUR-REGION.pooler.supabase.com:5432/postgres?sslmode=require
 PIPELINE_MODE=direct
 SCORER_PROVIDER=heuristic
 ```
 
 Run `supabase/schema.sql` in the Supabase SQL editor before the first API write.
+If the password contains `$` or `%`, percent-encode it before placing it into `DATABASE_URL`.
 
 2. Re-run frontend checks after any further UI changes.
 
@@ -96,8 +92,10 @@ pytest
 
 ```powershell
 cd services/api
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --port 8000
 ```
+
+If you update `.env`, restart the API process so the engine is rebuilt with the new `DATABASE_URL`.
 
 5. Run the frontend.
 
@@ -121,16 +119,16 @@ docker compose up --build
 
 ### Phase 0: Stabilize the Scaffold
 
-- Commit the generated `package-lock.json` and current frontend fixes.
-- Commit the backend packaging/testability fixes.
-- Add Supabase credentials and run `supabase/schema.sql`.
-- Validate direct mode against live Supabase.
+- Keep README, env examples, and roadmap aligned with the Supabase mini-project path.
+- Keep the live API process restarted after env changes.
+- Re-run one signed-in browser submit after backend restarts to confirm the BFF path is healthy.
 
 ### Phase 1: Validate Supabase Direct Backend
 
 - Start the FastAPI backend locally with `PIPELINE_MODE=direct`.
-- Submit sample payloads from `scripts/demo_payloads.http`.
+- Submit sample payloads from `scripts/demo_payloads.http` or `/app`.
 - Confirm FastAPI intake, scoring, Supabase incident rows, and high-severity alert stub rows.
+- Confirm moderator review status changes persist to Supabase.
 
 ### Phase 1B: Optional Queue Pipeline
 
@@ -139,8 +137,7 @@ docker compose up --build
 
 ### Phase 2: Validate Frontend App Shell
 
-- Configure Google OAuth redirect URI for `http://localhost:3000/api/auth/callback/google`.
-- Sign in with an email listed in `MODERATOR_EMAILS`.
+- Sign in with a Supabase email/password account listed in `MODERATOR_EMAILS`.
 - Submit text from `/app`.
 - Verify `/moderation` polls incident and alert APIs every few seconds.
 - Open `/moderation/incidents/[id]` and test `reviewed`, `dismissed`, and `escalated` actions.
@@ -166,8 +163,9 @@ docker compose up --build
 
 ## Known Implementation Notes
 
-- The backend API expects `X-Internal-Token`; the Next.js BFF routes add it automatically.
+- The preferred auth path is now Supabase bearer token forwarding from the Next.js BFF to FastAPI.
+- `X-Internal-Token` remains available for local scripts and internal calls.
 - Detoxify downloads model weights on first inference. The first worker run can be slow and requires network access.
-- The current app shell is intentionally lean and operational. It is not a full social network product.
+- The current app shell is intentionally lean and operational. It is not a full social product.
 - Email delivery is stubbed by design; alert events are stored in PostgreSQL instead of being sent.
-- The local machine currently reports Python 3.13, but the Docker backend uses Python 3.11. Use Docker or a Python 3.11 environment for the ML stack.
+- The local machine currently reports Python 3.13. The heavier ML path is still safer on Python 3.11 if you later enable Detoxify.

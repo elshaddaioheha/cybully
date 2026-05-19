@@ -27,21 +27,24 @@ Copy-Item .env.example .env
 
 2. Create a Supabase project and run `supabase/schema.sql` in the Supabase SQL editor.
 
-3. Put your Supabase Postgres connection string into `.env`.
+3. Put your Supabase Postgres Session Pooler connection string into `.env`.
 
 ```text
-DATABASE_URL=postgresql+asyncpg://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres?ssl=require
+DATABASE_URL=postgresql://postgres.YOUR_PROJECT_REF:YOUR_PERCENT_ENCODED_PASSWORD@aws-1-YOUR-REGION.pooler.supabase.com:5432/postgres?sslmode=require
 PIPELINE_MODE=direct
 SCORER_PROVIDER=heuristic
 ```
 
 `PIPELINE_MODE=direct` removes the need for Docker, RabbitMQ, and local PostgreSQL. The API processes the text and persists the incident during the request.
+If your database password contains reserved characters such as `$` or `%`, percent-encode them in `DATABASE_URL`.
 
 4. Configure backend and moderator values in `.env`.
 
 ```text
 MODERATOR_EMAILS=your-moderator-email@example.com
 ```
+
+If you change `.env` while the API is already running, restart `uvicorn`. The SQLAlchemy engine is created at startup, so the running process will not pick up a new `DATABASE_URL` until restart.
 5. Create `apps/web/.env.local` for the public Supabase web keys.
 
 ```text
@@ -73,12 +76,12 @@ For this mini-project setup, the default scorer is `heuristic`, so no PyTorch or
 
 ## Manual Demo
 
-1. Open http://localhost:3000/sign-in.
+1. Open http://localhost:3000.
 2. Sign in with a Supabase email/password account, or create one at `/sign-up`.
 3. New sign-ups must confirm their email before sign-in when Supabase email confirmation is enabled.
 4. To preview moderator screens immediately, sign in with an email listed in `MODERATOR_EMAILS`.
 5. Submit text at `/app`.
-6. In direct mode, the API writes the incident to Supabase during the request.
+6. In direct mode, the API writes the incident to Supabase during the request and returns a tracking id.
 7. Review incidents at `/moderation`.
 8. Open an incident detail page and mark it reviewed, dismissed, or escalated.
 9. Check high-severity alert stubs in the lower panel of `/moderation`.
@@ -140,6 +143,14 @@ npm run test:web
 - `GET /api/v1/alerts`: list stubbed high-severity alerts.
 
 All `/api/v1/*` backend routes require either a Supabase bearer token or `X-Internal-Token`. The Next.js server routes now forward the signed-in user's Supabase access token to FastAPI.
+
+## Current Status
+
+- Landing page, sign-in, sign-up, submit flow, moderation list, incident detail, and settings screens are implemented.
+- Supabase email/password auth is live.
+- FastAPI bearer-token validation against Supabase Auth is live.
+- Direct-mode incident persistence to Supabase Postgres is working with the Session Pooler configuration.
+- Stub alert persistence is wired, but production email delivery is still intentionally out of scope.
 
 ## Optional Queue Mode
 
