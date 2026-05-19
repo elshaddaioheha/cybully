@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { RefreshCcw } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowReloadHorizontalIcon } from "@hugeicons/core-free-icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { SeverityBadge } from "@/components/SeverityBadge";
@@ -117,7 +118,13 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
               onClick={refresh}
               className="ui-secondary-button h-12"
             >
-              <RefreshCcw size={16} aria-hidden className={isRefreshing ? "animate-spin" : ""} />
+              <HugeiconsIcon
+                icon={ArrowReloadHorizontalIcon}
+                size={16}
+                strokeWidth={1.9}
+                className={isRefreshing ? "animate-spin" : ""}
+                aria-hidden
+              />
               Refresh
             </button>
           </div>

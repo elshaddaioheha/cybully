@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Clock3, Send } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Clock01Icon, SentIcon } from "@hugeicons/core-free-icons";
 
 export function SubmitTextForm() {
   const [targetUserId, setTargetUserId] = useState("");
@@ -81,7 +82,7 @@ export function SubmitTextForm() {
 
         <div className="mt-auto pt-6">
           <button type="submit" disabled={isSubmitting} className="ui-primary-button">
-            <Send size={18} aria-hidden />
+            <HugeiconsIcon icon={SentIcon} size={18} strokeWidth={1.9} aria-hidden />
             {isSubmitting ? "Submitting" : "Submit for analysis"}
           </button>
         </div>
@@ -99,7 +100,7 @@ export function SubmitTextForm() {
           <div className="ui-card-subtle text-center">
             <p className="text-sm font-bold text-ink">Pipeline State</p>
             <div className="mt-8 flex items-center justify-center gap-3 text-5xl font-bold leading-none text-ink">
-              <Clock3 size={38} aria-hidden />
+              <HugeiconsIcon icon={Clock01Icon} size={38} strokeWidth={1.9} aria-hidden />
               {trackingId ? "Queued" : "Ready"}
             </div>
           </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { LogIn } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Login01Icon } from "@hugeicons/core-free-icons";
 
 export default function SignInPage() {
   return (
@@ -14,7 +15,7 @@ export default function SignInPage() {
           onClick={() => signIn("google", { callbackUrl: "/app" })}
           className="ui-primary-button mt-8"
         >
-          <LogIn size={17} aria-hidden />
+          <HugeiconsIcon icon={Login01Icon} size={17} strokeWidth={1.9} aria-hidden />
           Continue with Google
         </button>
       </section>

@@ -1,16 +1,17 @@
 "use client";
 
-import { CheckCircle2, Flag, XCircle } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Cancel01Icon, CheckmarkCircle01Icon, Flag01Icon } from "@hugeicons/core-free-icons";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import type { Incident, IncidentStatus } from "@/types";
 
-const actions: Array<{ status: Extract<IncidentStatus, "reviewed" | "dismissed" | "escalated">; label: string; icon: typeof CheckCircle2 }> = [
-  { status: "reviewed", label: "Mark reviewed", icon: CheckCircle2 },
-  { status: "dismissed", label: "Dismiss", icon: XCircle },
-  { status: "escalated", label: "Escalate", icon: Flag }
-];
+const actions = [
+  { status: "reviewed", label: "Mark reviewed", icon: CheckmarkCircle01Icon },
+  { status: "dismissed", label: "Dismiss", icon: Cancel01Icon },
+  { status: "escalated", label: "Escalate", icon: Flag01Icon }
+] as const;
 
 export function IncidentReviewPanel({ incident }: { incident: Incident }) {
   const router = useRouter();
@@ -53,7 +54,6 @@ export function IncidentReviewPanel({ incident }: { incident: Incident }) {
       />
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {actions.map((action) => {
-          const Icon = action.icon;
           return (
             <button
               key={action.status}
@@ -62,7 +62,7 @@ export function IncidentReviewPanel({ incident }: { incident: Incident }) {
               disabled={Boolean(isSubmitting)}
               className="ui-secondary-button"
             >
-              <Icon size={16} aria-hidden />
+              <HugeiconsIcon icon={action.icon} size={16} strokeWidth={1.9} aria-hidden />
               {isSubmitting === action.status ? "Saving" : action.label}
             </button>
           );

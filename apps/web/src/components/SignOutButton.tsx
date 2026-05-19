@@ -1,6 +1,7 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Logout01Icon } from "@hugeicons/core-free-icons";
 import { signOut } from "next-auth/react";
 
 export function SignOutButton() {
@@ -10,7 +11,7 @@ export function SignOutButton() {
       type="button"
       onClick={() => signOut({ callbackUrl: "/sign-in" })}
     >
-      <LogOut size={16} aria-hidden />
+      <HugeiconsIcon icon={Logout01Icon} size={16} strokeWidth={1.9} aria-hidden />
       Sign out
     </button>
   );
