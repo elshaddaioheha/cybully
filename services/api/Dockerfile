@@ -11,7 +11,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml ./
-RUN pip install ".[dev]"
+RUN pip install ".[dev,ml]"
 
 COPY alembic.ini ./
 COPY alembic ./alembic
@@ -19,4 +19,3 @@ COPY app ./app
 COPY tests ./tests
 
 EXPOSE 8000
-

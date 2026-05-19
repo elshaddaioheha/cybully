@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
@@ -22,7 +24,21 @@ from app.schemas import (
 )
 
 settings = get_settings()
-app = FastAPI(title="Cybully Moderation API", version="0.1.0")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    if not hasattr(app.state, "broker"):
+        app.state.broker = RabbitMQBroker(settings)
+    try:
+        yield
+    finally:
+        broker: RabbitMQBroker | None = getattr(app.state, "broker", None)
+        if broker:
+            await broker.close()
+
+
+app = FastAPI(title="Cybully Moderation API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_cors_origins,
@@ -30,19 +46,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-async def startup() -> None:
-    if not hasattr(app.state, "broker"):
-        app.state.broker = RabbitMQBroker(settings)
-
-
-@app.on_event("shutdown")
-async def shutdown() -> None:
-    broker: RabbitMQBroker | None = getattr(app.state, "broker", None)
-    if broker:
-        await broker.close()
 
 
 @app.get("/health")

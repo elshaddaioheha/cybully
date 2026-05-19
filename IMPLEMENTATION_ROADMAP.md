@@ -42,11 +42,13 @@ Verification completed:
 - `npm run build:web` passed.
 - `npm run test:web` passed.
 - Tailwind/PostCSS is now using `apps/web/postcss.config.js` in CommonJS format.
+- Backend dependency installation completed with `python -m pip install -e ".[dev]"`.
+- `python -m pytest` passed for backend tests.
+- FastAPI startup/shutdown now uses a lifespan handler instead of deprecated `on_event` hooks.
 
 Verification not completed:
 
-- Backend dependency installation and `pytest` have not been completed.
-- Docker Compose build/run has not been completed.
+- Docker Compose build/run has not been completed because `docker` is not available on PATH in this environment.
 
 ## Immediate Continuation Instructions
 
@@ -73,7 +75,7 @@ npm run build:web
 npm run test:web
 ```
 
-3. Run backend checks. Prefer Python 3.11 because the Docker image and ML stack target 3.11.
+3. Re-run backend checks after backend changes. Prefer Python 3.11 because the Docker image and ML stack target 3.11.
 
 ```powershell
 cd services/api
@@ -101,8 +103,8 @@ RabbitMQ credentials are `cybully` / `cybully`.
 ### Phase 0: Stabilize the Scaffold
 
 - Commit the generated `package-lock.json` and current frontend fixes.
-- Install backend dev dependencies and run `pytest`.
-- Fix any Python test failures found by backend checks.
+- Commit the backend packaging/testability fixes.
+- Install Docker Desktop or make Docker available on PATH for local Compose validation.
 
 ### Phase 1: Validate Backend Pipeline
 

@@ -7,7 +7,6 @@ dependencies = [
   "aio-pika>=9.5,<10",
   "alembic>=1.14,<2",
   "asyncpg>=0.30,<1",
-  "detoxify>=0.5.2,<1",
   "fastapi>=0.115,<1",
   "greenlet>=3.1,<4",
   "pydantic>=2.10,<3",
@@ -23,8 +22,20 @@ dev = [
   "pytest>=8.3,<9",
   "pytest-asyncio>=0.25,<1"
 ]
+ml = [
+  "detoxify>=0.5.2,<1"
+]
+
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+exclude = ["alembic*", "tests*"]
 
 [tool.pytest.ini_options]
+addopts = "-p no:cacheprovider"
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["."]
@@ -32,4 +43,3 @@ pythonpath = ["."]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-
