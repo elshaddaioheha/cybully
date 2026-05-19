@@ -1,0 +1,38 @@
+@baseUrl = http://localhost:8000
+@token = dev-internal-token
+
+### Health
+GET {{baseUrl}}/health
+
+### Benign sample
+POST {{baseUrl}}/api/v1/analyze/text
+Content-Type: application/json
+X-Internal-Token: {{token}}
+
+{
+  "user_id": "student1@example.com",
+  "target_user_id": "student2@example.com",
+  "timestamp": "2026-05-18T18:00:00Z",
+  "text": "I disagree with your point, but I think we can work it out."
+}
+
+### Toxic sample
+POST {{baseUrl}}/api/v1/analyze/text
+Content-Type: application/json
+X-Internal-Token: {{token}}
+
+{
+  "user_id": "student3@example.com",
+  "target_user_id": "student4@example.com",
+  "timestamp": "2026-05-18T18:05:00Z",
+  "text": "You are useless and everyone should avoid you."
+}
+
+### Incident list
+GET {{baseUrl}}/api/v1/incidents
+X-Internal-Token: {{token}}
+
+### Alert list
+GET {{baseUrl}}/api/v1/alerts
+X-Internal-Token: {{token}}
+

@@ -1,0 +1,51 @@
+from __future__ import annotations
+
+from functools import lru_cache
+
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    environment: str = "development"
+    allowed_cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    backend_internal_token: str = "dev-internal-token"
+
+    database_url: str = "postgresql+asyncpg://cybully:cybully@localhost:5432/cybully"
+    rabbitmq_url: str = "amqp://cybully:cybully@localhost:5672/"
+
+    inference_task_queue: str = "inference_task_queue"
+    persistence_queue: str = "persistence_queue"
+    alert_dispatch_queue: str = "alert_dispatch_queue"
+
+    detoxify_model_name: str = "unbiased"
+    model_inference_device: str = "cpu"
+
+    risk_threshold_medium: float = 0.4
+    risk_threshold_high: float = 0.7
+    risk_weight_intent: float = 0.25
+    risk_weight_repetition: float = 0.25
+    risk_weight_aggression: float = 0.5
+    repetition_window_hours: int = 48
+    repetition_decay: float = 0.7
+
+    admin_notification_email: str = "moderation@example.com"
+
+    @field_validator("allowed_cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, value: str | list[str]) -> list[str]:
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(",") if item.strip()]
+        return value
+
+    @property
+    def risk_weight_total(self) -> float:
+        return self.risk_weight_intent + self.risk_weight_repetition + self.risk_weight_aggression
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+

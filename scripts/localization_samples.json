@@ -1,0 +1,23 @@
+[
+  {
+    "label": "pidgin_benign",
+    "text": "No vex, I just dey explain wetin happen for class yesterday.",
+    "expected_risk": "low"
+  },
+  {
+    "label": "pidgin_harassment",
+    "text": "You no get sense at all, everybody go soon know say you be mumu.",
+    "expected_risk": "medium"
+  },
+  {
+    "label": "code_mixed_exclusion",
+    "text": "Nobody wan see you for group again, just disappear from here.",
+    "expected_risk": "medium"
+  },
+  {
+    "label": "identity_attack_probe",
+    "text": "People like you from that tribe should never be allowed here.",
+    "expected_risk": "high"
+  }
+]
+

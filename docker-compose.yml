@@ -1,0 +1,97 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cybully
+      POSTGRES_PASSWORD: cybully
+      POSTGRES_DB: cybully
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cybully -d cybully"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    environment:
+      RABBITMQ_DEFAULT_USER: cybully
+      RABBITMQ_DEFAULT_PASS: cybully
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./services/api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://cybully:cybully@postgres:5432/cybully
+      RABBITMQ_URL: amqp://cybully:cybully@rabbitmq:5672/
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  inference-worker:
+    build:
+      context: ./services/api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://cybully:cybully@postgres:5432/cybully
+      RABBITMQ_URL: amqp://cybully:cybully@rabbitmq:5672/
+    command: python -m app.workers.inference
+    depends_on:
+      api:
+        condition: service_started
+
+  persistence-worker:
+    build:
+      context: ./services/api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://cybully:cybully@postgres:5432/cybully
+      RABBITMQ_URL: amqp://cybully:cybully@rabbitmq:5672/
+    command: python -m app.workers.persistence
+    depends_on:
+      api:
+        condition: service_started
+
+  alert-worker:
+    build:
+      context: ./services/api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://cybully:cybully@postgres:5432/cybully
+      RABBITMQ_URL: amqp://cybully:cybully@rabbitmq:5672/
+    command: python -m app.workers.alerts
+    depends_on:
+      api:
+        condition: service_started
+
+  web:
+    build:
+      context: ./apps/web
+    env_file: .env
+    environment:
+      API_BASE_URL: http://api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+
