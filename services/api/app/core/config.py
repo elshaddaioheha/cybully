@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     environment: str = "development"
     allowed_cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
     backend_internal_token: str = "dev-internal-token"
+    supabase_url: str | None = None
+    supabase_publishable_key: str | None = None
+    supabase_secret_key: str | None = None
 
     database_url: str = "postgresql+asyncpg://cybully:cybully@localhost:5432/cybully"
     rabbitmq_url: str = "amqp://cybully:cybully@localhost:5672/"
@@ -55,6 +58,10 @@ class Settings(BaseSettings):
         if value not in {"heuristic", "detoxify"}:
             raise ValueError("scorer_provider must be heuristic or detoxify")
         return value
+
+    @property
+    def auth_key_for_verification(self) -> str | None:
+        return self.supabase_publishable_key or self.supabase_secret_key
 
     @property
     def risk_weight_total(self) -> float:

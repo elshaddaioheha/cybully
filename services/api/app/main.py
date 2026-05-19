@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.security import require_internal_token
+from app.core.security import AuthContext, require_internal_token
 from app.db import get_session
 from app.ml.factory import create_text_scorer
 from app.queues import RabbitMQBroker
@@ -66,15 +66,20 @@ async def health() -> dict[str, str]:
     "/api/v1/analyze/text",
     response_model=AnalyzeTextResponse,
     status_code=status.HTTP_202_ACCEPTED,
-    dependencies=[Depends(require_internal_token)],
 )
 async def analyze_text(
     request: Request,
     payload: AnalyzeTextRequest,
     session: AsyncSession = Depends(get_session),
+    auth: AuthContext = Depends(require_internal_token),
 ) -> AnalyzeTextResponse:
     incident_id = str(uuid4())
-    task = InferenceTask(incident_id=incident_id, **payload.model_dump())
+    task_payload = payload.model_dump()
+    if auth.auth_mode == "supabase":
+        # With Supabase auth, do not trust caller-supplied user_id.
+        task_payload["user_id"] = auth.user_id or payload.user_id
+
+    task = InferenceTask(incident_id=incident_id, **task_payload)
 
     if settings.pipeline_mode == "direct":
         scorer = getattr(request.app.state, "scorer", create_text_scorer(settings))
@@ -106,10 +111,10 @@ async def analyze_text(
 @app.get(
     "/api/v1/incidents",
     response_model=IncidentListResponse,
-    dependencies=[Depends(require_internal_token)],
 )
 async def get_incidents(
     session: AsyncSession = Depends(get_session),
+    _auth: AuthContext = Depends(require_internal_token),
     severity: str | None = Query(default=None, pattern="^(low|medium|high)$"),
     status_filter: str | None = Query(default=None, alias="status"),
     limit: int = Query(default=25, ge=1, le=100),
@@ -128,11 +133,11 @@ async def get_incidents(
 @app.get(
     "/api/v1/incidents/{incident_id}",
     response_model=IncidentRead,
-    dependencies=[Depends(require_internal_token)],
 )
 async def get_incident_detail(
     incident_id: str,
     session: AsyncSession = Depends(get_session),
+    _auth: AuthContext = Depends(require_internal_token),
 ) -> IncidentRead:
     incident = await get_incident(session, incident_id)
     if not incident:
@@ -143,12 +148,12 @@ async def get_incident_detail(
 @app.patch(
     "/api/v1/incidents/{incident_id}",
     response_model=IncidentRead,
-    dependencies=[Depends(require_internal_token)],
 )
 async def patch_incident(
     incident_id: str,
     payload: IncidentUpdateRequest,
     session: AsyncSession = Depends(get_session),
+    _auth: AuthContext = Depends(require_internal_token),
 ) -> IncidentRead:
     incident = await get_incident(session, incident_id)
     if not incident:
@@ -160,10 +165,10 @@ async def patch_incident(
 @app.get(
     "/api/v1/alerts",
     response_model=AlertListResponse,
-    dependencies=[Depends(require_internal_token)],
 )
 async def get_alerts(
     session: AsyncSession = Depends(get_session),
+    _auth: AuthContext = Depends(require_internal_token),
     limit: int = Query(default=25, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> AlertListResponse:
