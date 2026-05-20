@@ -97,8 +97,8 @@ export function IncidentReviewPanel({ incident }: { incident: Incident }) {
         <p
           className={
             feedback.kind === "error"
-              ? "mt-4 rounded-xl bg-red-600 px-4 py-3 text-center text-base font-bold text-white"
-              : "mt-4 rounded-xl bg-brand px-4 py-3 text-center text-base font-bold text-white"
+              ? "mt-4 rounded-xl bg-red-600 px-4 py-3 text-center text-sm font-bold text-white sm:text-base"
+              : "mt-4 rounded-xl bg-brand px-4 py-3 text-center text-sm font-bold text-white sm:text-base"
           }
         >
           {feedback.message}

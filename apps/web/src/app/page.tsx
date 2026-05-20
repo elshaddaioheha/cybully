@@ -59,19 +59,19 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(31,138,168,0.14),_transparent_28%),linear-gradient(180deg,_#ffffff_0%,_#f8f9fa_48%,_#eef5f7_100%)]">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-6 sm:px-6 lg:px-8">
+      <header className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
         <BrandLogo href="/" />
-        <div className="flex items-center gap-3">
-          <Link href="/sign-in" className="ui-secondary-button">
+        <div className="flex w-full items-center gap-3 sm:w-auto">
+          <Link href="/sign-in" className="ui-secondary-button flex-1 sm:flex-none">
             Sign in
           </Link>
-          <Link href="/sign-up" className="ui-primary-button w-auto px-6">
+          <Link href="/sign-up" className="ui-primary-button flex-1 px-5 sm:w-auto sm:flex-none sm:px-6">
             Create account
           </Link>
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 pb-14 pt-6 sm:px-6 lg:px-8 lg:pb-20">
+      <section className="mx-auto max-w-6xl px-4 pb-12 pt-4 sm:px-6 sm:pb-14 sm:pt-6 lg:px-8 lg:pb-20">
         <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
           <div className="space-y-7">
             <div className="inline-flex items-center gap-2 rounded-full border border-line bg-white/90 px-4 py-2 text-sm font-bold text-ink shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
@@ -80,10 +80,10 @@ export default async function HomePage() {
             </div>
 
             <div className="space-y-5">
-              <h1 className="ui-heading max-w-3xl text-5xl md:text-6xl">
+              <h1 className="ui-heading max-w-3xl text-4xl sm:text-5xl md:text-6xl">
                 Understand harmful messages before they escalate.
               </h1>
-              <p className="max-w-2xl text-lg leading-8 text-muted md:text-xl">
+              <p className="max-w-2xl text-base leading-7 text-muted sm:text-lg sm:leading-8 md:text-xl">
                 CyBully is a focused cyberbullying detection workspace for submitting text,
                 scoring risk, and giving moderators a fast path from signal to review.
               </p>
@@ -114,41 +114,41 @@ export default async function HomePage() {
 
           <div className="grid gap-4 sm:grid-cols-[1.08fr_0.92fr]">
             <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-[0_10px_28px_rgba(16,20,24,0.08)]">
-              <Image
-                src={galleryImages[0].src}
-                alt={galleryImages[0].alt}
-                width={1200}
-                height={900}
-                className="h-[420px] w-full object-cover"
-              />
-            </div>
-            <div className="grid gap-4">
+                  <Image
+                    src={galleryImages[0].src}
+                    alt={galleryImages[0].alt}
+                    width={1200}
+                    height={900}
+                    className="h-[280px] w-full object-cover sm:h-[420px]"
+                  />
+                </div>
+                <div className="grid gap-4">
               {galleryImages.slice(1).map((image) => (
                 <div
                   key={image.src}
                   className="overflow-hidden rounded-2xl border border-line bg-white shadow-[0_10px_24px_rgba(16,20,24,0.08)]"
                 >
-                  <Image
-                    src={image.src}
-                    alt={image.alt}
-                    width={900}
-                    height={700}
-                    className="h-[202px] w-full object-cover"
-                  />
-                </div>
-              ))}
+                    <Image
+                      src={image.src}
+                      alt={image.alt}
+                      width={900}
+                      height={700}
+                      className="h-[160px] w-full object-cover sm:h-[202px]"
+                    />
+                  </div>
+                ))}
             </div>
           </div>
         </div>
       </section>
 
       <section className="border-t border-black/5 bg-white/80">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-16">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 sm:py-14 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-16">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.08em] text-brand">
               What users get
             </p>
-            <h2 className="mt-4 text-3xl font-normal leading-tight text-ink" style={{ letterSpacing: "-0.02em" }}>
+            <h2 className="mt-4 text-2xl font-normal leading-tight text-ink sm:text-3xl" style={{ letterSpacing: "-0.02em" }}>
               A lean workflow built for product validation, not presentation fluff.
             </h2>
           </div>

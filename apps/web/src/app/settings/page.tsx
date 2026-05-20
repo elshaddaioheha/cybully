@@ -16,7 +16,7 @@ export default async function SettingsPage() {
           </div>
           <div>
             <dt className="ui-label">Email</dt>
-            <dd className="rounded-xl bg-field px-4 py-3 text-ink">{session.user?.email}</dd>
+            <dd className="break-all rounded-xl bg-field px-4 py-3 text-ink">{session.user?.email}</dd>
           </div>
           <div>
             <dt className="ui-label">Role</dt>

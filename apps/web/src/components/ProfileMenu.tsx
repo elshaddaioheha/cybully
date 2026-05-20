@@ -74,7 +74,7 @@ export function ProfileMenu({ email, name, role = "user" }: ProfileMenuProps) {
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 top-14 z-20 w-72 rounded-2xl border border-line bg-white p-4 shadow-[0_14px_32px_rgba(16,20,24,0.12)]">
+        <div className="absolute right-0 top-14 z-20 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-line bg-white p-4 shadow-[0_14px_32px_rgba(16,20,24,0.12)]">
           <div className="rounded-2xl bg-field px-4 py-4">
             <div className="flex items-center gap-3">
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand text-base font-bold text-white">

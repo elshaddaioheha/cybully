@@ -34,21 +34,21 @@ select {
 
 @layer components {
   .ui-card {
-    @apply rounded-xl border border-line bg-white p-6;
+    @apply rounded-xl border border-line bg-white p-4 sm:p-6;
     box-shadow: var(--shadow-card);
   }
 
   .ui-card-subtle {
-    @apply rounded-xl border border-line bg-field p-6;
+    @apply rounded-xl border border-line bg-field p-4 sm:p-6;
   }
 
   .ui-heading {
-    @apply text-4xl font-normal leading-tight text-ink md:text-5xl;
+    @apply text-3xl font-normal leading-tight text-ink sm:text-4xl md:text-5xl;
     letter-spacing: -0.02em;
   }
 
   .ui-section-title {
-    @apply text-2xl font-normal leading-tight text-ink;
+    @apply text-xl font-normal leading-tight text-ink sm:text-2xl;
     letter-spacing: -0.02em;
   }
 
@@ -69,11 +69,11 @@ select {
   }
 
   .ui-metric {
-    @apply text-center text-6xl font-bold leading-none text-ink;
+    @apply text-center text-4xl font-bold leading-none text-ink sm:text-6xl;
   }
 
   .ui-alert-block {
-    @apply rounded-xl px-6 py-8 text-center text-4xl font-bold leading-tight text-white;
+    @apply rounded-xl px-4 py-6 text-center text-3xl font-bold leading-tight text-white sm:px-6 sm:py-8 sm:text-4xl;
     letter-spacing: -0.02em;
   }
 }

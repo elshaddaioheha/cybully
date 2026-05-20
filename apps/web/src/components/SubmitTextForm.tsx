@@ -46,10 +46,10 @@ export function SubmitTextForm() {
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <form onSubmit={onSubmit} className="ui-card flex min-h-[640px] flex-col">
+      <form onSubmit={onSubmit} className="ui-card flex min-h-0 flex-col sm:min-h-[640px]">
         <div>
           <h2 className="ui-section-title">Analyze a message</h2>
-          <p className="mt-3 max-w-md text-base leading-7 text-muted">
+          <p className="mt-3 max-w-md text-sm leading-6 text-muted sm:text-base sm:leading-7">
             Enter a user pair and the message content for the moderation pipeline.
           </p>
         </div>
@@ -107,8 +107,8 @@ export function SubmitTextForm() {
 
           <div className="ui-card-subtle text-center">
             <p className="text-sm font-bold text-ink">Pipeline State</p>
-            <div className="mt-8 flex items-center justify-center gap-3 text-5xl font-bold leading-none text-ink">
-              <HugeiconsIcon icon={Clock01Icon} size={38} strokeWidth={1.9} aria-hidden />
+            <div className="mt-8 flex items-center justify-center gap-2 text-3xl font-bold leading-none text-ink sm:gap-3 sm:text-5xl">
+              <HugeiconsIcon icon={Clock01Icon} size={32} strokeWidth={1.9} aria-hidden />
               {trackingId ? "Queued" : "Ready"}
             </div>
           </div>
@@ -130,10 +130,10 @@ export function SubmitTextForm() {
           ) : null}
 
           <div>
-            <h3 className="text-2xl font-normal text-ink" style={{ letterSpacing: "-0.02em" }}>
+            <h3 className="text-xl font-normal text-ink sm:text-2xl" style={{ letterSpacing: "-0.02em" }}>
               Signal basis
             </h3>
-            <p className="mt-4 text-base leading-7 text-muted">
+            <p className="mt-4 text-sm leading-6 text-muted sm:text-base sm:leading-7">
               Toxicity, insult, identity attack, and recent repetition determine the persisted severity profile.
             </p>
           </div>

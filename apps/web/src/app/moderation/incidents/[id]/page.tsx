@@ -29,22 +29,22 @@ export default async function IncidentDetailPage({ params }: PageProps) {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="ui-section-title">Incident detail</h1>
-              <p className="mt-2 text-sm text-muted">{incident.id}</p>
+              <p className="mt-2 break-all text-sm text-muted">{incident.id}</p>
             </div>
             <SeverityBadge severity={incident.severity_level} />
           </div>
           <dl className="mt-6 grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
             <div className="ui-card-subtle text-center">
               <dt className="text-sm font-bold text-ink">Severity score</dt>
-              <dd className="mt-6 text-5xl font-bold leading-none text-ink">{incident.severity_score.toFixed(2)}</dd>
+              <dd className="mt-6 text-4xl font-bold leading-none text-ink sm:text-5xl">{incident.severity_score.toFixed(2)}</dd>
             </div>
             <div className="ui-card-subtle text-center">
               <dt className="text-sm font-bold text-ink">Status</dt>
-              <dd className="mt-6 text-4xl font-bold capitalize leading-none text-ink">{incident.status}</dd>
+              <dd className="mt-6 text-3xl font-bold capitalize leading-none text-ink sm:text-4xl">{incident.status}</dd>
             </div>
             <div className="ui-card-subtle text-center">
               <dt className="text-sm font-bold text-ink">Model</dt>
-              <dd className="mt-6 text-lg font-bold text-ink">{incident.model_version}</dd>
+              <dd className="mt-6 break-words text-base font-bold text-ink sm:text-lg">{incident.model_version}</dd>
             </div>
           </dl>
           <dl className="mt-4 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
@@ -91,7 +91,7 @@ export default async function IncidentDetailPage({ params }: PageProps) {
             ].map(([label, value]) => (
               <div key={label} className="ui-card-subtle text-center">
                 <div className="text-sm font-bold text-ink">{label}</div>
-                <div className="mt-5 text-4xl font-bold leading-none text-ink">{Number(value).toFixed(2)}</div>
+                <div className="mt-5 text-3xl font-bold leading-none text-ink sm:text-4xl">{Number(value).toFixed(2)}</div>
               </div>
             ))}
           </div>

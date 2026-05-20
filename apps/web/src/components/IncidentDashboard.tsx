@@ -58,7 +58,7 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
     <div className="space-y-6">
       <section className="mx-auto max-w-4xl py-6 text-center">
         <h1 className="ui-heading">Moderation Dashboard</h1>
-        <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-muted">
+        <p className="mx-auto mt-4 max-w-3xl text-base leading-7 text-muted sm:mt-5 sm:text-lg sm:leading-8">
           Review model outcomes, severity distribution, and alert stubs from a minimal operations grid.
         </p>
       </section>
@@ -74,7 +74,7 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
         </div>
         <div className="ui-card text-center">
           <p className="text-sm font-bold text-ink">Refresh</p>
-          <p className="mt-7 text-5xl font-bold leading-none text-ink">5s</p>
+          <p className="mt-7 text-3xl font-bold leading-none text-ink sm:text-5xl">5s</p>
         </div>
       </section>
 
@@ -82,15 +82,15 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h2 className="ui-section-title">Moderation queue</h2>
-            <p className="mt-3 text-base leading-7 text-muted">{incidents.total} incidents match the current filters.</p>
+            <p className="mt-3 text-sm leading-6 text-muted sm:text-base sm:leading-7">{incidents.total} incidents match the current filters.</p>
           </div>
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="grid w-full grid-cols-1 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:items-end">
             <label className="text-sm font-bold text-ink">
               Severity
               <select
                 value={severity}
                 onChange={(event) => setSeverity(event.target.value as "" | SeverityLevel)}
-                className="ui-input mt-2 block h-12 min-w-32 py-2"
+                className="ui-input mt-2 block h-12 w-full py-2 sm:min-w-32"
               >
                 {severities.map((value) => (
                   <option key={value || "all"} value={value}>
@@ -104,7 +104,7 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
               <select
                 value={status}
                 onChange={(event) => setStatus(event.target.value as "" | IncidentStatus)}
-                className="ui-input mt-2 block h-12 min-w-36 py-2"
+                className="ui-input mt-2 block h-12 w-full py-2 sm:min-w-36"
               >
                 {statuses.map((value) => (
                   <option key={value || "all"} value={value}>
@@ -116,7 +116,7 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
             <button
               type="button"
               onClick={refresh}
-              className="ui-secondary-button h-12"
+              className="ui-secondary-button h-12 w-full sm:w-auto"
             >
               <HugeiconsIcon
                 icon={ArrowReloadHorizontalIcon}
