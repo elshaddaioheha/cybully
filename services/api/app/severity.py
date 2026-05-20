@@ -42,7 +42,9 @@ def calculate_severity(
     settings: Settings,
 ) -> SeverityResult:
     total = settings.risk_weight_total or 1.0
-    intent = clamp(scores.identity_attack)
+    intent = clamp(max(scores.identity_attack, scores.threat, scores.severe_toxicity))
+    if scores.threat >= 0.8:
+        intent = clamp(max(intent, scores.threat + 0.1))
     repetition = repetition_score(prior_incident_count, settings.repetition_decay)
     aggression = aggression_score(scores)
     weighted = (
@@ -60,4 +62,3 @@ def calculate_severity(
         repetition_score=round(repetition, 4),
         prior_incident_count=prior_incident_count,
     )
-

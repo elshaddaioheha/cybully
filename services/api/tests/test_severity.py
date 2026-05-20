@@ -29,3 +29,18 @@ def test_calculate_severity_keeps_benign_text_low() -> None:
     assert result.severity_level == "low"
     assert result.severity_score < settings.risk_threshold_medium
 
+
+def test_calculate_severity_flags_direct_threat_as_high() -> None:
+    settings = Settings()
+    scores = ModelScores(
+        toxic=0.86,
+        severe_toxicity=0.9,
+        threat=0.92,
+        insult=0.6,
+        identity_attack=0.1,
+    )
+
+    result = calculate_severity(scores, prior_incident_count=0, settings=settings)
+
+    assert result.intent_score == 1.0
+    assert result.severity_level == "high"

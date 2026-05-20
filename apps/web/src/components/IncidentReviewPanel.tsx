@@ -3,7 +3,7 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Cancel01Icon, CheckmarkCircle01Icon, Flag01Icon } from "@hugeicons/core-free-icons";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { Incident, IncidentStatus } from "@/types";
 
@@ -17,23 +17,48 @@ export function IncidentReviewPanel({ incident }: { incident: Incident }) {
   const router = useRouter();
   const [note, setNote] = useState(incident.review_note ?? "");
   const [isSubmitting, setSubmitting] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
+  const refreshTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (refreshTimer.current) {
+        window.clearTimeout(refreshTimer.current);
+      }
+    };
+  }, []);
 
   async function update(status: IncidentStatus) {
     setSubmitting(status);
-    setError(null);
+    setFeedback(null);
     try {
       const response = await fetch(`/api/incidents/${incident.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status, review_note: note || null })
       });
+      const payload = (await response.json().catch(() => null)) as Partial<Incident> & { error?: string } | null;
       if (!response.ok) {
-        throw new Error("Unable to update incident");
+        throw new Error(payload?.error ?? "Unable to update incident");
       }
-      router.refresh();
+      const updatedStatus = payload?.status ?? status;
+      const updatedNote = payload?.review_note;
+      if (typeof updatedNote === "string" || updatedNote === null) {
+        setNote(updatedNote ?? "");
+      }
+      setFeedback({
+        kind: "success",
+        message: `Incident marked ${updatedStatus}. Refreshing details...`
+      });
+      if (refreshTimer.current) {
+        window.clearTimeout(refreshTimer.current);
+      }
+      refreshTimer.current = window.setTimeout(() => router.refresh(), 1000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to update incident");
+      setFeedback({
+        kind: "error",
+        message: err instanceof Error ? err.message : "Unable to update incident"
+      });
     } finally {
       setSubmitting(null);
     }
@@ -68,7 +93,17 @@ export function IncidentReviewPanel({ incident }: { incident: Incident }) {
           );
         })}
       </div>
-      {error ? <p className="mt-4 rounded-xl bg-danger px-4 py-3 text-center text-base font-bold text-white">{error}</p> : null}
+      {feedback ? (
+        <p
+          className={
+            feedback.kind === "error"
+              ? "mt-4 rounded-xl bg-red-600 px-4 py-3 text-center text-base font-bold text-white"
+              : "mt-4 rounded-xl bg-brand px-4 py-3 text-center text-base font-bold text-white"
+          }
+        >
+          {feedback.message}
+        </p>
+      ) : null}
     </section>
   );
 }

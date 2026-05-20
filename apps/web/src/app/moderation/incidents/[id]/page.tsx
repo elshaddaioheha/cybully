@@ -47,6 +47,20 @@ export default async function IncidentDetailPage({ params }: PageProps) {
               <dd className="mt-6 text-lg font-bold text-ink">{incident.model_version}</dd>
             </div>
           </dl>
+          <dl className="mt-4 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+            <div className="ui-card-subtle">
+              <dt className="text-sm font-bold text-ink">Last reviewer</dt>
+              <dd className="mt-3 break-all text-base text-ink">
+                {incident.reviewed_by_email || incident.reviewed_by_user_id || "Not reviewed yet"}
+              </dd>
+            </div>
+            <div className="ui-card-subtle">
+              <dt className="text-sm font-bold text-ink">Last moderated</dt>
+              <dd className="mt-3 text-base text-ink">
+                {incident.moderated_at ? new Date(incident.moderated_at).toLocaleString() : "Not reviewed yet"}
+              </dd>
+            </div>
+          </dl>
         </section>
 
         <section className="ui-card">

@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://cybully:cybully@localhost:5432/cybully"
     rabbitmq_url: str = "amqp://cybully:cybully@localhost:5672/"
     pipeline_mode: str = "queue"
-    scorer_provider: str = "heuristic"
+    scorer_provider: str = "auto"
 
     inference_task_queue: str = "inference_task_queue"
     persistence_queue: str = "persistence_queue"
@@ -77,8 +77,8 @@ class Settings(BaseSettings):
     @field_validator("scorer_provider")
     @classmethod
     def validate_scorer_provider(cls, value: str) -> str:
-        if value not in {"heuristic", "detoxify"}:
-            raise ValueError("scorer_provider must be heuristic or detoxify")
+        if value not in {"auto", "heuristic", "detoxify"}:
+            raise ValueError("scorer_provider must be auto, heuristic, or detoxify")
         return value
 
     @property

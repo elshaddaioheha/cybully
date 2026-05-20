@@ -17,9 +17,16 @@ create table if not exists incidents (
   model_version varchar(128) not null,
   raw_model_output jsonb not null,
   review_note text,
+  reviewed_by_user_id varchar(255),
+  reviewed_by_email varchar(255),
+  moderated_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table incidents add column if not exists reviewed_by_user_id varchar(255);
+alter table incidents add column if not exists reviewed_by_email varchar(255);
+alter table incidents add column if not exists moderated_at timestamptz;
 
 create index if not exists ix_incidents_user_id on incidents (user_id);
 create index if not exists ix_incidents_target_user_id on incidents (target_user_id);
@@ -27,6 +34,7 @@ create index if not exists ix_incidents_timestamp on incidents (timestamp);
 create index if not exists ix_incidents_status on incidents (status);
 create index if not exists ix_incidents_severity_level on incidents (severity_level);
 create index if not exists ix_incidents_severity_score on incidents (severity_score);
+create index if not exists ix_incidents_moderated_at on incidents (moderated_at);
 create index if not exists ix_incidents_user_target_timestamp
   on incidents (user_id, target_user_id, timestamp);
 
@@ -41,4 +49,3 @@ create table if not exists alerts (
 );
 
 create index if not exists ix_alerts_incident_id on alerts (incident_id);
-

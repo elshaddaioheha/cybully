@@ -37,6 +37,9 @@ class Incident(Base):
     model_version: Mapped[str] = mapped_column(String(128))
     raw_model_output: Mapped[dict] = mapped_column(JSONB)
     review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reviewed_by_user_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    reviewed_by_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    moderated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -55,4 +58,3 @@ class Alert(Base):
     payload: Mapped[dict] = mapped_column(JSONB)
     delivery_state: Mapped[str] = mapped_column(String(32), default="stubbed")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-

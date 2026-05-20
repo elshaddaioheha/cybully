@@ -84,9 +84,15 @@ async def update_incident(
     session: AsyncSession,
     incident: Incident,
     update: IncidentUpdateRequest,
+    *,
+    reviewer_user_id: str | None,
+    reviewer_email: str | None,
 ) -> Incident:
     incident.status = update.status
     incident.review_note = update.review_note
+    incident.reviewed_by_user_id = reviewer_user_id
+    incident.reviewed_by_email = reviewer_email
+    incident.moderated_at = datetime.now(timezone.utc)
     await session.commit()
     await session.refresh(incident)
     return incident
@@ -119,4 +125,3 @@ async def count_recent_prior_incidents(
         .where(Incident.severity_level.in_(["medium", "high"]))
     )
     return int(count or 0)
-

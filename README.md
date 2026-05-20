@@ -32,7 +32,7 @@ Copy-Item .env.example .env
 ```text
 DATABASE_URL=postgresql://postgres.YOUR_PROJECT_REF:YOUR_PERCENT_ENCODED_PASSWORD@aws-1-YOUR-REGION.pooler.supabase.com:5432/postgres?sslmode=require
 PIPELINE_MODE=direct
-SCORER_PROVIDER=heuristic
+SCORER_PROVIDER=auto
 ```
 
 `PIPELINE_MODE=direct` removes the need for Docker, RabbitMQ, and local PostgreSQL. The API processes the text and persists the incident during the request.
@@ -72,7 +72,7 @@ npm run dev:web
 - Web app: http://localhost:3000
 - FastAPI docs: http://localhost:8000/docs
 
-For this mini-project setup, the default scorer is `heuristic`, so no PyTorch or Detoxify model download is required. Set `SCORER_PROVIDER=detoxify` and install `python -m pip install -e ".[dev,ml]"` if you want to use the heavier Detoxify model later.
+For this mini-project setup, `SCORER_PROVIDER=auto` uses Detoxify when the ML dependency is available, and automatically falls back to the local heuristic scorer if Detoxify is unavailable or fails to initialize. To force Detoxify only, set `SCORER_PROVIDER=detoxify` and install `python -m pip install -e ".[dev,ml]"`.
 
 ## Manual Demo
 
@@ -139,7 +139,7 @@ npm run test:web
 - `POST /api/v1/analyze/text`: analyze text directly in mini mode, persist it, and return a tracking id.
 - `GET /api/v1/incidents`: list incidents with `severity`, `status`, `limit`, and `offset`.
 - `GET /api/v1/incidents/{id}`: fetch incident detail.
-- `PATCH /api/v1/incidents/{id}`: update moderation status and note.
+- `PATCH /api/v1/incidents/{id}`: update moderation status and note, with reviewer identity and moderation timestamp persistence.
 - `GET /api/v1/alerts`: list stubbed high-severity alerts.
 
 All `/api/v1/*` backend routes require either a Supabase bearer token or `X-Internal-Token`. The Next.js server routes now forward the signed-in user's Supabase access token to FastAPI.

@@ -92,6 +92,9 @@ class IncidentRead(BaseModel):
     model_version: str
     raw_model_output: dict
     review_note: str | None
+    reviewed_by_user_id: str | None
+    reviewed_by_email: str | None
+    moderated_at: datetime | None
     created_at: datetime
     updated_at: datetime
 
@@ -125,4 +128,3 @@ class AlertListResponse(BaseModel):
     total: int
     limit: int
     offset: int
-

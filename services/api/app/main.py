@@ -156,12 +156,18 @@ async def patch_incident(
     incident_id: str,
     payload: IncidentUpdateRequest,
     session: AsyncSession = Depends(get_session),
-    _auth: AuthContext = Depends(require_internal_token),
+    auth: AuthContext = Depends(require_internal_token),
 ) -> IncidentRead:
     incident = await get_incident(session, incident_id)
     if not incident:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found.")
-    updated = await update_incident(session, incident, payload)
+    updated = await update_incident(
+        session,
+        incident,
+        payload,
+        reviewer_user_id=auth.user_id,
+        reviewer_email=auth.email,
+    )
     return IncidentRead.model_validate(updated)
 
 

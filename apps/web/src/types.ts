@@ -20,6 +20,9 @@ export type Incident = {
   model_version: string;
   raw_model_output: Record<string, unknown>;
   review_note: string | null;
+  reviewed_by_user_id: string | null;
+  reviewed_by_email: string | null;
+  moderated_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -47,4 +50,3 @@ export type AlertListResponse = {
   limit: number;
   offset: number;
 };
-

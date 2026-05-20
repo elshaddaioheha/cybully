@@ -23,7 +23,7 @@ Completed:
   - `app.workers.persistence`
   - `app.workers.alerts`
 - SQLAlchemy models, Alembic migration, repository helpers, and severity scoring.
-- Heuristic mini-project scorer by default, with optional Detoxify model adapter for heavier ML mode.
+- Auto scorer selection with Detoxify primary and heuristic fallback for mini-project resilience.
 - Supabase schema SQL in `supabase/schema.sql`.
 - Next.js app shell with:
   - Supabase email/password auth
@@ -66,7 +66,7 @@ Fill in:
 MODERATOR_EMAILS=your-google-email@example.com
 DATABASE_URL=postgresql://postgres.YOUR_PROJECT_REF:YOUR_PERCENT_ENCODED_PASSWORD@aws-1-YOUR-REGION.pooler.supabase.com:5432/postgres?sslmode=require
 PIPELINE_MODE=direct
-SCORER_PROVIDER=heuristic
+SCORER_PROVIDER=auto
 ```
 
 Run `supabase/schema.sql` in the Supabase SQL editor before the first API write.
@@ -133,7 +133,7 @@ docker compose up --build
 ### Phase 1B: Optional Queue Pipeline
 
 - Run RabbitMQ and workers only if the project grows beyond direct mode.
-- Set `PIPELINE_MODE=queue` and optionally `SCORER_PROVIDER=detoxify`.
+- Set `PIPELINE_MODE=queue` and choose `SCORER_PROVIDER=detoxify` or `SCORER_PROVIDER=auto`.
 
 ### Phase 2: Validate Frontend App Shell
 
