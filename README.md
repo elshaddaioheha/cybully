@@ -74,6 +74,24 @@ npm run dev:web
 
 For this mini-project setup, `SCORER_PROVIDER=auto` uses Detoxify when the ML dependency is available, and automatically falls back to the local heuristic scorer if Detoxify is unavailable or fails to initialize. To force Detoxify only, set `SCORER_PROVIDER=detoxify` and install `python -m pip install -e ".[dev,ml]"`.
 
+## Backend Deployment (Render)
+
+The repository includes a Render Blueprint at `render.yaml` for the FastAPI backend.
+
+1. In Render, create a new Blueprint service from this repository.
+2. Confirm the service uses `services/api/Dockerfile`.
+3. Set required secrets in Render:
+   - `DATABASE_URL` (Supabase session pooler URL with `sslmode=require`)
+   - `SUPABASE_URL`
+   - `SUPABASE_PUBLISHABLE_KEY`
+   - `SUPABASE_SECRET_KEY`
+   - `BACKEND_INTERNAL_TOKEN`
+   - `ALLOWED_CORS_ORIGINS` (set to your deployed frontend URL)
+   - `ADMIN_NOTIFICATION_EMAIL`
+4. Deploy. The container startup script runs `alembic upgrade head` before booting Uvicorn.
+
+Health check endpoint: `GET /health`
+
 ## Manual Demo
 
 1. Open http://localhost:3000.

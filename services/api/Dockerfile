@@ -11,11 +11,13 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml ./
-RUN pip install ".[dev,ml]"
+COPY app ./app
+RUN pip install .
 
 COPY alembic.ini ./
 COPY alembic ./alembic
-COPY app ./app
-COPY tests ./tests
+COPY scripts ./scripts
+RUN chmod +x ./scripts/start.sh
 
 EXPOSE 8000
+CMD ["./scripts/start.sh"]

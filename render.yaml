@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: cybully-api
+    env: docker
+    dockerfilePath: ./services/api/Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: PIPELINE_MODE
+        value: direct
+      - key: SCORER_PROVIDER
+        value: auto
+      - key: RUN_MIGRATIONS
+        value: "1"
+      - key: MODEL_INFERENCE_DEVICE
+        value: cpu
+      - key: RISK_THRESHOLD_MEDIUM
+        value: "0.4"
+      - key: RISK_THRESHOLD_HIGH
+        value: "0.7"
+      - key: RISK_WEIGHT_INTENT
+        value: "0.25"
+      - key: RISK_WEIGHT_REPETITION
+        value: "0.25"
+      - key: RISK_WEIGHT_AGGRESSION
+        value: "0.5"
+      - key: REPETITION_WINDOW_HOURS
+        value: "48"
+      - key: REPETITION_DECAY
+        value: "0.7"
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: BACKEND_INTERNAL_TOKEN
+        sync: false
+      - key: ALLOWED_CORS_ORIGINS
+        sync: false
+      - key: ADMIN_NOTIFICATION_EMAIL
+        sync: false
