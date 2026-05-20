@@ -74,21 +74,31 @@ npm run dev:web
 
 For this mini-project setup, `SCORER_PROVIDER=auto` uses Detoxify when the ML dependency is available, and automatically falls back to the local heuristic scorer if Detoxify is unavailable or fails to initialize. To force Detoxify only, set `SCORER_PROVIDER=detoxify` and install `python -m pip install -e ".[dev,ml]"`.
 
-## Backend Deployment (Render)
+## Backend Deployment (Railway)
 
-The repository includes a Render Blueprint at `render.yaml` for the FastAPI backend.
+The backend is ready for Railway Docker deployment from this monorepo.
 
-1. In Render, create a new Blueprint service from this repository.
-2. Confirm the service uses `services/api/Dockerfile`.
-3. Set required secrets in Render:
+1. Create a new Railway project and choose **Deploy from GitHub repo**.
+2. Open the backend service settings and set:
+   - **Root Directory**: `services/api`
+   - **Builder**: `Dockerfile` (auto-detected from `services/api/Dockerfile`)
+3. Add service variables in Railway:
+   - `ENVIRONMENT=production`
+   - `PIPELINE_MODE=direct`
+   - `SCORER_PROVIDER=auto`
+   - `MODEL_INFERENCE_DEVICE=cpu`
+   - `RUN_MIGRATIONS=1`
    - `DATABASE_URL` (Supabase session pooler URL with `sslmode=require`)
    - `SUPABASE_URL`
    - `SUPABASE_PUBLISHABLE_KEY`
    - `SUPABASE_SECRET_KEY`
    - `BACKEND_INTERNAL_TOKEN`
-   - `ALLOWED_CORS_ORIGINS` (set to your deployed frontend URL)
+   - `ALLOWED_CORS_ORIGINS` (your deployed frontend origin)
    - `ADMIN_NOTIFICATION_EMAIL`
-4. Deploy. The container startup script runs `alembic upgrade head` before booting Uvicorn.
+4. In service Networking, generate a public domain.
+5. Trigger a deploy. Container startup runs `alembic upgrade head` before booting Uvicorn.
+
+Optional: if you deploy from repo root instead of setting Root Directory, set `RAILWAY_DOCKERFILE_PATH=/services/api/Dockerfile`.
 
 Health check endpoint: `GET /health`
 
