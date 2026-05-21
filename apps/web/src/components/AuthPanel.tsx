@@ -62,6 +62,7 @@ export function AuthPanel({ mode, appName }: AuthPanelProps) {
         email: email.trim().toLowerCase(),
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/sign-in`,
           data: {
             full_name: name.trim()
           }
