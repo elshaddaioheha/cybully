@@ -8,10 +8,36 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
+def _ancestor_chain(path: Path) -> tuple[Path, ...]:
+    return (path, *path.parents)
+
+
+def _find_api_root(config_file: Path) -> Path:
+    for candidate in _ancestor_chain(config_file.parent):
+        if (candidate / "pyproject.toml").is_file() and (candidate / "app").is_dir():
+            return candidate
+    if len(config_file.parents) >= 3:
+        return config_file.parents[2]
+    return config_file.parent
+
+
+def _find_repo_root(api_root: Path) -> Path:
+    for candidate in _ancestor_chain(api_root.parent):
+        if (candidate / ".git").exists():
+            return candidate
+        if (
+            (candidate / "package.json").is_file()
+            and (candidate / "apps").is_dir()
+            and (candidate / "services").is_dir()
+        ):
+            return candidate
+    return api_root
+
+
 def default_env_files() -> tuple[str, ...]:
     config_file = Path(__file__).resolve()
-    repo_root = config_file.parents[4]
-    api_root = config_file.parents[2]
+    api_root = _find_api_root(config_file)
+    repo_root = _find_repo_root(api_root)
 
     candidates = (
         repo_root / ".env",
@@ -19,7 +45,15 @@ def default_env_files() -> tuple[str, ...]:
         api_root / ".env",
         api_root / ".env.local",
     )
-    return tuple(str(path) for path in candidates)
+    deduplicated: list[str] = []
+    seen: set[str] = set()
+    for path in candidates:
+        path_str = str(path)
+        if path_str in seen:
+            continue
+        seen.add(path_str)
+        deduplicated.append(path_str)
+    return tuple(deduplicated)
 
 
 class Settings(BaseSettings):
