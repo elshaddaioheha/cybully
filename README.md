@@ -94,6 +94,7 @@ The backend is ready for Railway Docker deployment from this monorepo.
    - `SUPABASE_SECRET_KEY`
    - `BACKEND_INTERNAL_TOKEN`
    - `ALLOWED_CORS_ORIGINS` (your deployed frontend origin)
+   - `MODERATOR_EMAILS` (comma-separated moderator email allowlist)
    - `ADMIN_NOTIFICATION_EMAIL`
 4. In service Networking, generate a public domain.
 5. Trigger a deploy. Container startup runs `alembic upgrade head` before booting Uvicorn.

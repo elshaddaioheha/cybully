@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.security import AuthContext, require_internal_token
+from app.core.security import AuthContext, require_internal_token, require_moderator_token
 from app.db import get_session
 from app.ml.factory import create_text_scorer
 from app.queues import RabbitMQBroker
@@ -116,8 +116,8 @@ async def analyze_text(
     response_model=IncidentListResponse,
 )
 async def get_incidents(
+    _auth: AuthContext = Depends(require_moderator_token),
     session: AsyncSession = Depends(get_session),
-    _auth: AuthContext = Depends(require_internal_token),
     severity: str | None = Query(default=None, pattern="^(low|medium|high)$"),
     status_filter: str | None = Query(default=None, alias="status"),
     limit: int = Query(default=25, ge=1, le=100),
@@ -139,8 +139,8 @@ async def get_incidents(
 )
 async def get_incident_detail(
     incident_id: str,
+    _auth: AuthContext = Depends(require_moderator_token),
     session: AsyncSession = Depends(get_session),
-    _auth: AuthContext = Depends(require_internal_token),
 ) -> IncidentRead:
     incident = await get_incident(session, incident_id)
     if not incident:
@@ -155,8 +155,8 @@ async def get_incident_detail(
 async def patch_incident(
     incident_id: str,
     payload: IncidentUpdateRequest,
+    auth: AuthContext = Depends(require_moderator_token),
     session: AsyncSession = Depends(get_session),
-    auth: AuthContext = Depends(require_internal_token),
 ) -> IncidentRead:
     incident = await get_incident(session, incident_id)
     if not incident:
@@ -176,8 +176,8 @@ async def patch_incident(
     response_model=AlertListResponse,
 )
 async def get_alerts(
+    _auth: AuthContext = Depends(require_moderator_token),
     session: AsyncSession = Depends(get_session),
-    _auth: AuthContext = Depends(require_internal_token),
     limit: int = Query(default=25, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> AlertListResponse:

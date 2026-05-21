@@ -67,6 +67,7 @@ class Settings(BaseSettings):
     allowed_cors_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["http://localhost:3000"]
     )
+    moderator_emails: Annotated[list[str], NoDecode] = Field(default_factory=list)
     backend_internal_token: str = "dev-internal-token"
     supabase_url: str | None = None
     supabase_publishable_key: str | None = None
@@ -100,6 +101,13 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
+
+    @field_validator("moderator_emails", mode="before")
+    @classmethod
+    def parse_moderator_emails(cls, value: str | list[str]) -> list[str]:
+        if isinstance(value, str):
+            return [item.strip().lower() for item in value.split(",") if item.strip()]
+        return [item.strip().lower() for item in value if item.strip()]
 
     @field_validator("pipeline_mode")
     @classmethod

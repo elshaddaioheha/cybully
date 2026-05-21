@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import httpx
-from fastapi import Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 
 from app.core.config import get_settings
 
@@ -72,4 +72,21 @@ async def require_internal_token(
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Missing or invalid API credentials.",
+    )
+
+
+async def require_moderator_token(
+    auth: AuthContext = Depends(require_internal_token),
+) -> AuthContext:
+    if auth.auth_mode == "internal":
+        return auth
+
+    settings = get_settings()
+    moderator_emails = {email.lower() for email in settings.moderator_emails}
+    if auth.email and auth.email.lower() in moderator_emails:
+        return auth
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Moderator access required.",
     )
