@@ -8,9 +8,9 @@ import { useEffect, useRef, useState } from "react";
 import type { Incident, IncidentStatus } from "@/types";
 
 const actions = [
-  { status: "reviewed", label: "Mark reviewed", icon: CheckmarkCircle01Icon },
-  { status: "dismissed", label: "Dismiss", icon: Cancel01Icon },
-  { status: "escalated", label: "Escalate", icon: Flag01Icon }
+  { status: "reviewed", label: "Flag as Reviewed", icon: CheckmarkCircle01Icon },
+  { status: "dismissed", label: "Dismiss (Mark Safe)", icon: Cancel01Icon },
+  { status: "escalated", label: "Escalate to Admin", icon: Flag01Icon }
 ] as const;
 
 export function IncidentReviewPanel({ incident }: { incident: Incident }) {
@@ -66,7 +66,7 @@ export function IncidentReviewPanel({ incident }: { incident: Incident }) {
 
   return (
     <section className="ui-card">
-      <h2 className="ui-section-title">Review action</h2>
+      <h2 className="ui-section-title">Moderator Decision Panel</h2>
       <label htmlFor="review_note" className="ui-label mt-6">
         Moderator note
       </label>
@@ -75,6 +75,7 @@ export function IncidentReviewPanel({ incident }: { incident: Incident }) {
         rows={5}
         value={note}
         onChange={(event) => setNote(event.target.value)}
+        placeholder="Add details about this decision..."
         className="ui-input resize-none"
       />
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">

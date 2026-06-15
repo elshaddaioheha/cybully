@@ -25,6 +25,7 @@ export type Incident = {
   moderated_at: string | null;
   created_at: string;
   updated_at: string;
+  fallback?: boolean;
 };
 
 export type IncidentListResponse = {
@@ -32,6 +33,7 @@ export type IncidentListResponse = {
   total: number;
   limit: number;
   offset: number;
+  fallback?: boolean;
 };
 
 export type Alert = {
@@ -42,6 +44,7 @@ export type Alert = {
   payload: Record<string, unknown>;
   delivery_state: string;
   created_at: string;
+  fallback?: boolean;
 };
 
 export type AlertListResponse = {
@@ -49,4 +52,5 @@ export type AlertListResponse = {
   total: number;
   limit: number;
   offset: number;
+  fallback?: boolean;
 };

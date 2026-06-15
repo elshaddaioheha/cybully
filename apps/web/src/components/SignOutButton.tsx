@@ -22,10 +22,22 @@ export function SignOutButton({ fullWidth = false, variant = "neutral" }: SignOu
 
   async function handleSignOut() {
     const supabase = createClient();
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn("[AUTH DIAGNOSTIC] Supabase signOut failed:", e);
+    }
+
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (e) {
+      console.error("[AUTH FALLBACK] Failed to call mock logout endpoint:", e);
+    }
+
     router.push("/sign-in");
     router.refresh();
   }
+
 
   return (
     <button

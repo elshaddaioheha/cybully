@@ -91,16 +91,44 @@ export function AuthPanel({ mode, appName }: AuthPanelProps) {
       password
     });
 
-    setSubmitting(false);
-
     if (signInError) {
+      console.warn("[AUTH DIAGNOSTIC] Supabase authentication failed. Attempting local mock fallback. Error:", signInError.message);
+      
+      try {
+        const fallbackResponse = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const fallbackData = await fallbackResponse.json().catch(() => null);
+        if (fallbackResponse.ok && fallbackData?.success) {
+          console.log("[AUTH FALLBACK] Successful mock sign-in for:", email);
+          setSubmitting(false);
+          router.push("/app");
+          router.refresh();
+          return;
+        } else {
+          setError(
+            fallbackData?.error || normalizeMessage(signInError.message)
+          );
+          setSubmitting(false);
+          return;
+        }
+      } catch (fallbackErr) {
+        console.error("[AUTH FALLBACK] Error calling mock sign-in endpoint:", fallbackErr);
+      }
+
       setError(normalizeMessage(signInError.message));
+      setSubmitting(false);
       return;
     }
 
+    setSubmitting(false);
     router.push("/app");
     router.refresh();
   }
+
 
   return (
     <section className="ui-card w-full max-w-md px-6 py-8 sm:px-7 sm:py-9">

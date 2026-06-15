@@ -1,4 +1,5 @@
 import { apiBaseUrl, backendInternalToken } from "@/lib/env";
+import { fallbackDb } from "@/lib/fallback-db";
 
 type BackendFetchOptions = {
   authToken?: string | null;
@@ -24,17 +25,95 @@ export async function backendFetch<T>(path: string, options: BackendFetchOptions
     headers["X-Internal-Token"] = backendInternalToken();
   }
 
-  const response = await fetch(url, {
-    method: options.method ?? "GET",
-    headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-    cache: "no-store"
-  });
+  let useFallback = false;
+  let response: Response | null = null;
+  let fetchError: Error | null = null;
 
-  if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(`Backend request failed (${response.status}): ${detail}`);
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    response = await fetch(url, {
+      method: options.method ?? "GET",
+      headers,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      cache: "no-store",
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      if (response.status >= 500) {
+        useFallback = true;
+      } else {
+        const detail = await response.text();
+        throw new Error(`Backend request failed (${response.status}): ${detail}`);
+      }
+    }
+  } catch (err) {
+    fetchError = err as Error;
+    useFallback = true;
   }
 
-  return response.json() as Promise<T>;
+  if (useFallback) {
+    console.warn(`[API FALLBACK] Backend unreachable/5xx for ${path}. Using offline fallback. Error:`, fetchError || `HTTP ${response?.status}`);
+
+    const isIncidents = path.startsWith("/api/v1/incidents");
+    const isAlerts = path.startsWith("/api/v1/alerts");
+    const isAnalyze = path.startsWith("/api/v1/analyze/text");
+
+    if (isAnalyze && options.method === "POST") {
+      const body = options.body as any;
+      const text = String(body?.text ?? "").trim();
+      const targetUserId = String(body?.target_user_id ?? "").trim();
+      const userId = String(body?.user_id ?? "fallback-user").trim();
+
+      const res = fallbackDb.analyzeText(text, targetUserId, userId);
+      return { ...res, fallback: true } as unknown as T;
+    }
+
+    if (isIncidents) {
+      const parts = path.split("/");
+      const id = parts[4]; // ['', 'api', 'v1', 'incidents', '{id}']
+      if (id) {
+        if (options.method === "PATCH") {
+          const body = options.body as any;
+          let reviewer = { id: "mock-reviewer", email: "pascaladerinola082@gmail.com" as string | null };
+          try {
+            const { getSession } = await import("@/lib/auth");
+            const session = await getSession();
+            if (session?.user) {
+              reviewer = { id: session.user.id, email: session.user.email };
+            }
+          } catch (e) {
+            console.error("[API FALLBACK] Failed to resolve session for reviewer logging:", e);
+          }
+          const res = fallbackDb.updateIncident(id, body.status, body.review_note, reviewer);
+          if (!res) {
+            throw new Error(`Fallback incident not found: ${id}`);
+          }
+          return { ...res, fallback: true } as unknown as T;
+        } else {
+          const res = fallbackDb.getIncident(id);
+          if (!res) {
+            throw new Error(`Fallback incident not found: ${id}`);
+          }
+          return { ...res, fallback: true } as unknown as T;
+        }
+      } else {
+        const res = fallbackDb.listIncidents(options.query);
+        return { ...res, fallback: true } as unknown as T;
+      }
+    }
+
+    if (isAlerts) {
+      const res = fallbackDb.listAlerts(options.query);
+      return { ...res, fallback: true } as unknown as T;
+    }
+
+    throw new Error(`Backend fetch failed and route ${path} not handled by fallback.`);
+  }
+
+  return response!.json() as Promise<T>;
 }
+

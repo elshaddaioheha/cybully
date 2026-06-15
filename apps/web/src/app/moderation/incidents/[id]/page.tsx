@@ -28,7 +28,7 @@ export default async function IncidentDetailPage({ params }: PageProps) {
         <section className="ui-card">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="ui-section-title">Incident detail</h1>
+              <h1 className="ui-section-title">Flagged Incident Report</h1>
               <p className="mt-2 break-all text-sm text-muted">{incident.id}</p>
             </div>
             <SeverityBadge severity={incident.severity_level} />
@@ -43,7 +43,7 @@ export default async function IncidentDetailPage({ params }: PageProps) {
               <dd className="mt-6 text-3xl font-bold capitalize leading-none text-ink sm:text-4xl">{incident.status}</dd>
             </div>
             <div className="ui-card-subtle text-center">
-              <dt className="text-sm font-bold text-ink">Model</dt>
+              <dt className="text-sm font-bold text-ink">Safety Engine Version</dt>
               <dd className="mt-6 break-words text-base font-bold text-ink sm:text-lg">{incident.model_version}</dd>
             </div>
           </dl>
@@ -68,18 +68,18 @@ export default async function IncidentDetailPage({ params }: PageProps) {
           <p className="mt-5 whitespace-pre-wrap rounded-xl border border-line bg-field p-4 text-base leading-7">{incident.text}</p>
           <dl className="mt-6 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
             <div>
-              <dt className="ui-label">From</dt>
+              <dt className="ui-label">Sender Account ID</dt>
               <dd className="rounded-xl bg-field px-4 py-3 text-ink">{incident.user_id}</dd>
             </div>
             <div>
-              <dt className="ui-label">Target</dt>
+              <dt className="ui-label">Target Account ID</dt>
               <dd className="rounded-xl bg-field px-4 py-3 text-ink">{incident.target_user_id}</dd>
             </div>
           </dl>
         </section>
 
         <section className="ui-card">
-          <h2 className="ui-section-title">Model signals</h2>
+          <h2 className="ui-section-title">Detailed Risk Metrics</h2>
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
               ["Aggression", incident.aggression_score],

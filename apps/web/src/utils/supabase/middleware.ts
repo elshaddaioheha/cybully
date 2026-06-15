@@ -47,10 +47,17 @@ export async function updateSession(request: NextRequest) {
       }, 800)
     );
 
-    await Promise.race([sessionPromise, timeoutPromise]);
+    const result = await Promise.race([sessionPromise, timeoutPromise]);
+    if (result && typeof result === "object" && "error" in result && result.error) {
+      console.error("[SUPABASE AUTH DIAGNOSTIC] getSession() in middleware returned error:", {
+        message: (result.error as any).message,
+        status: (result.error as any).status
+      });
+    }
   } catch (error) {
     console.error("Error updating session in middleware:", error);
   }
 
   return response;
 }
+
