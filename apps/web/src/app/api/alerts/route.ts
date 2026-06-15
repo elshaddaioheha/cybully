@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 import { backendFetch } from "@/lib/backend";
+
 import { getSession } from "@/lib/auth";
 import type { AlertListResponse } from "@/types";
 
