@@ -1,3 +1,13 @@
+---
+title: Cybully API
+emoji: 🛡️
+colorFrom: indigo
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Cybully Safety MVP
 
 This repository implements the 1-week MVP plan from the system design document:
