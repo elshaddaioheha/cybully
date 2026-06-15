@@ -3,45 +3,47 @@ import sys
 import os
 from urllib.parse import urlparse
 
-print("=== STARTING NETWORK DIAGNOSTICS ===")
+summary = []
 
-def resolve_and_print(host, family_name, family_val):
-    print(f"Resolving {host} with family={family_name}...")
+def resolve_and_record(host):
+    summary.append(f"Host: {host}")
+    # AF_UNSPEC
     try:
-        res = socket.getaddrinfo(host, 5432, family=family_val)
-        print(f"  Results for {family_name}:")
-        for r in res:
-            print(f"    Family: {r[0]}, Sockaddr: {r[4]}")
+        res = socket.getaddrinfo(host, 5432, family=socket.AF_UNSPEC)
+        fams = [r[0] for r in res]
+        # socket.AF_INET might be 2, socket.AF_INET6 might be 10 or 30
+        has_v4 = any(f == socket.AF_INET for f in fams)
+        has_v6 = any(f == socket.AF_INET6 for f in fams)
+        summary.append(f"  UNSPEC: len={len(res)}, has_v4={has_v4}, has_v6={has_v6}")
+        if res:
+            summary.append(f"  First UNSPEC: family={res[0][0]}, ip={res[0][4][0]}")
     except Exception as e:
-        print(f"  Failed for {family_name}: {e}")
+        summary.append(f"  UNSPEC failed: {type(e).__name__}: {e}")
+        
+    # AF_INET
+    try:
+        res = socket.getaddrinfo(host, 5432, family=socket.AF_INET)
+        summary.append(f"  AF_INET: len={len(res)}, ip={res[0][4][0]}")
+    except Exception as e:
+        summary.append(f"  AF_INET failed: {type(e).__name__}: {e}")
 
 # Check DATABASE_URL from environment
 db_url = os.environ.get('DATABASE_URL', '')
-print(f"DATABASE_URL env var exists: {bool(db_url)}")
+summary.append(f"DB_URL exists: {bool(db_url)}")
 if db_url:
     try:
-        # Mask password in print
         parsed = urlparse(db_url)
-        print(f"Parsed Host: {parsed.hostname}")
-        print(f"Parsed Port: {parsed.port}")
+        summary.append(f"Parsed Host: {parsed.hostname}")
         if parsed.hostname:
-            resolve_and_print(parsed.hostname, "AF_UNSPEC (0)", socket.AF_UNSPEC)
-            resolve_and_print(parsed.hostname, "AF_INET (IPv4)", socket.AF_INET)
+            resolve_and_record(parsed.hostname)
     except Exception as e:
-        print(f"Error parsing DATABASE_URL: {e}")
+        summary.append(f"Parse error: {e}")
 
-# Test pooler host
-pooler_host = 'aws-1-eu-central-1.pooler.supabase.com'
-resolve_and_print(pooler_host, "AF_UNSPEC (0)", socket.AF_UNSPEC)
-resolve_and_print(pooler_host, "AF_INET (IPv4)", socket.AF_INET)
+resolve_and_record('aws-1-eu-central-1.pooler.supabase.com')
+resolve_and_record('db.hmbnqzxfbxqvfexdeeyk.supabase.co')
+resolve_and_record('google.com')
 
-# Test direct host
-direct_host = 'db.hmbnqzxfbxqvfexdeeyk.supabase.co'
-resolve_and_print(direct_host, "AF_UNSPEC (0)", socket.AF_UNSPEC)
-resolve_and_print(direct_host, "AF_INET (IPv4)", socket.AF_INET)
-
-# Test google.com
-resolve_and_print('google.com', "AF_UNSPEC (0)", socket.AF_UNSPEC)
-
-print("=== FORCE EXITING TO SHOW DIAGNOSTICS LOGS ===")
+print("=== DIAGNOSTICS SUMMARY ===")
+print("\n".join(summary))
+print("=== END DIAGNOSTICS SUMMARY ===")
 sys.exit(1)
