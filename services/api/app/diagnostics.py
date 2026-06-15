@@ -22,4 +22,5 @@ host2 = 'google.com'
 resolve_and_print(host2, "AF_UNSPEC (0)", socket.AF_UNSPEC)
 resolve_and_print(host2, "AF_INET (IPv4)", socket.AF_INET)
 
-print("=== END OF NETWORK DIAGNOSTICS ===")
+print("=== FORCE EXITING TO SHOW DIAGNOSTICS LOGS ===")
+sys.exit(1)
