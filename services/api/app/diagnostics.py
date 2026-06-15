@@ -1,5 +1,7 @@
 import socket
 import sys
+import os
+from urllib.parse import urlparse
 
 print("=== STARTING NETWORK DIAGNOSTICS ===")
 
@@ -13,14 +15,33 @@ def resolve_and_print(host, family_name, family_val):
     except Exception as e:
         print(f"  Failed for {family_name}: {e}")
 
-host = 'aws-1-eu-central-1.pooler.supabase.com'
-resolve_and_print(host, "AF_UNSPEC (0)", socket.AF_UNSPEC)
-resolve_and_print(host, "AF_INET (IPv4)", socket.AF_INET)
-resolve_and_print(host, "AF_INET6 (IPv6)", socket.AF_INET6)
+# Check DATABASE_URL from environment
+db_url = os.environ.get('DATABASE_URL', '')
+print(f"DATABASE_URL env var exists: {bool(db_url)}")
+if db_url:
+    try:
+        # Mask password in print
+        parsed = urlparse(db_url)
+        print(f"Parsed Host: {parsed.hostname}")
+        print(f"Parsed Port: {parsed.port}")
+        if parsed.hostname:
+            resolve_and_print(parsed.hostname, "AF_UNSPEC (0)", socket.AF_UNSPEC)
+            resolve_and_print(parsed.hostname, "AF_INET (IPv4)", socket.AF_INET)
+    except Exception as e:
+        print(f"Error parsing DATABASE_URL: {e}")
 
-host2 = 'google.com'
-resolve_and_print(host2, "AF_UNSPEC (0)", socket.AF_UNSPEC)
-resolve_and_print(host2, "AF_INET (IPv4)", socket.AF_INET)
+# Test pooler host
+pooler_host = 'aws-1-eu-central-1.pooler.supabase.com'
+resolve_and_print(pooler_host, "AF_UNSPEC (0)", socket.AF_UNSPEC)
+resolve_and_print(pooler_host, "AF_INET (IPv4)", socket.AF_INET)
+
+# Test direct host
+direct_host = 'db.hmbnqzxfbxqvfexdeeyk.supabase.co'
+resolve_and_print(direct_host, "AF_UNSPEC (0)", socket.AF_UNSPEC)
+resolve_and_print(direct_host, "AF_INET (IPv4)", socket.AF_INET)
+
+# Test google.com
+resolve_and_print('google.com', "AF_UNSPEC (0)", socket.AF_UNSPEC)
 
 print("=== FORCE EXITING TO SHOW DIAGNOSTICS LOGS ===")
 sys.exit(1)
