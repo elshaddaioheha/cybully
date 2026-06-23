@@ -1,204 +1,217 @@
+# CyBully: A Machine Learning-Powered Cyberbullying Detection and Moderation Workspace
+
+**A Project Submitted to the Department of Computer Science, Bowen University**  
+**Student Name:** Pascal Aderinola  
+**Academic Role:** B.Sc. Computer Science Candidate  
+**Project Focus:** Natural Language Processing (NLP) & Cyberbullying Detection Systems
+
 ---
-title: Cybully API
-emoji: 🛡️
-colorFrom: indigo
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: false
+
+## 📖 Executive Summary & Project Abstract
+
+In contemporary digital communication ecosystems, cyberbullying, hate speech, and online toxicity present significant social and safety challenges. **CyBully** is a high-performance, machine learning-powered moderation workspace designed to identify, analyze, and mitigate cyberbullying and toxic content in real time. 
+
+The system leverages advanced Natural Language Processing (NLP) models to score submitted text inputs across multiple risk dimensions (e.g., toxicity, insults, identity attacks, aggression, repetition, and intent). High-risk submissions trigger automatic "Incidents" that are queued inside a secure, role-based Moderator Dashboard. Administrators can audit the flagged contents, analyze detailed ML safety metrics, record decision logs, and mark incidents as reviewed, dismissed, or escalated.
+
+### Core Capabilities
+1. **Multi-Dimensional Risk Scoring**: Evaluation of toxic intent, repetitive harassment behavior, aggression levels, and identity attacks.
+2. **Hybrid ML Inference Scorer**: Configured to run on high-accuracy deep learning models (e.g., Detoxify transformers) with an automatic fallback to local heuristic algorithms under resource constraints.
+3. **Dual-Mode Processing Pipeline**:
+   - **Direct Mode**: Synchronous inference and persistence for low-latency, single-instance deployments.
+   - **Queue Mode**: Asynchronous message-broker-driven (RabbitMQ) worker pipelines for high-throughput scaling.
+4. **End-to-End Session Security**: Next.js Server-Side Rendering (SSR) session state seamlessly propagated to a secure FastAPI backend via verified Supabase Bearer Auth.
+5. **Secure Password Reset**: Fully integrated forgot password flow, token-based verification callback, and inside-app change password panel supporting live Supabase and mock fallback modes.
+6. **User Console Session Log**: Interactive activity logging feed persisted in browser local cache to track user text safety scan outcomes.
+
 ---
 
-# Cybully Safety MVP
+## 🏛️ System Architecture & Data Flow
 
-This repository implements the 1-week MVP plan from the system design document:
+CyBully uses a decoupled microservices architecture designed to scale components independently:
 
-- Next.js app shell with Supabase email/password auth and SSR session handling.
-- User-facing text submission flow.
-- Moderator incident queue, detail view, review actions, and polling refresh.
-- FastAPI backend with Supabase Postgres persistence, direct mini-project processing, optional RabbitMQ workers, and stubbed alert storage.
-
-The MVP is text-only. Image/video moderation, MinIO, vector search, Kubernetes, and production SendGrid delivery are intentionally out of scope.
-
-## Project Layout
-
-```text
-apps/web       Next.js App Router frontend and backend-for-frontend routes
-services/api   FastAPI app, SQLAlchemy models, Alembic migration, workers, tests
-scripts        Manual demo payloads and localization benchmark samples
+```mermaid
+graph TD
+    User([End User]) -->|Submits text /app| Frontend[Next.js App Router]
+    Admin([Administrator / Moderator]) -->|Accesses /moderation| Frontend
+    Frontend -->|Forwards Supabase Access Token| Backend[FastAPI Core]
+    Backend -->|Validates Token against| AuthProvider[Supabase Auth API]
+    Backend -->|Fetches / Persists Data| Database[(Supabase PostgreSQL)]
+    
+    subgraph Machine Learning Pipeline
+        Backend -->|Pipeline: Direct| Scorer{ML Scorer Factory}
+        Scorer -->|Mode: Detoxify| Model[Detoxify Transformer]
+        Scorer -->|Mode: Heuristic| Local[Regex & Lexicon Scorer]
+    end
+    
+    subgraph Asynchronous Queue Pipeline
+        Backend -->|Pipeline: Queue| Broker[RabbitMQ Message Broker]
+        Broker -->|Job Dispatch| Workers[Inference, Persistence & Alert Workers]
+        Workers --> Database
+    end
 ```
 
-## Supabase Mini-Project Setup
+### 1. Frontend Web Shell (`apps/web`)
+* **Framework**: Next.js 14 (App Router) utilizing React Server Components (RSCs).
+* **Styling**: Vanilla CSS custom design system with support for vibrant status elements, glassmorphism, and responsive layouts.
+* **Authentication**: Integrated with Supabase Auth for secure email/password sign-in and session state management.
+* **Role Check**: Evaluates user roles based on an allowlist config, granting or denying access to admin routes.
 
-1. Copy the environment file.
+### 2. Backend Service API (`services/api`)
+* **Framework**: FastAPI (Python 3.11) with fully asynchronous database sessions.
+* **ORM & Database**: SQLAlchemy with Alembic for structured PostgreSQL schema migrations.
+* **Authentication Handler**: Supabase bearer token validation. The backend receives the token, requests verification from the Supabase auth server, and verifies the user's role on every secure API request.
 
+---
+
+## 🔐 Administrator Dashboard: Access & Workflow
+
+A core requirement of the CyBully workspace is enabling administrators to audit flagged communications and enforce safety policy guidelines.
+
+### How to Access the Admin Dashboard
+
+1. **Moderator Allowlist Configuration**:  
+   Access to the dashboard is strictly regulated using an email-based permission model. Open the backend configuration file (`.env`) and configure the `MODERATOR_EMAILS` variable as a comma-separated list of approved admin emails:
+   ```text
+   MODERATOR_EMAILS=pascal@bowen.edu.ng,admin@example.com
+   ```
+2. **Frontend Security Guard**:  
+   When a user navigates to the `/moderation` path, the Next.js server calls the [requireModerator()](file:///c:/Users/HP/Desktop/cybully/apps/web/src/lib/guards.ts#L13-L19) guard. This guard verifies that the user is logged in and that their email is listed in `MODERATOR_EMAILS`. If unauthorized, they are instantly redirected to `/app`.
+3. **Backend API Protection**:  
+   All administrative endpoints (e.g., listing incidents, fetching incident details, patching incident status) depend on the [require_moderator_token](file:///c:/Users/HP/Desktop/cybully/services/api/app/core/security.py#L78-L92) FastAPI dependency. Even if frontend guards are bypassed, the API will reject requests with `403 Forbidden` if the user's token does not map to a moderator email.
+
+### How Admins View and Process Incidents
+
+```mermaid
+sequenceDiagram
+    actor Admin as Moderator (Admin)
+    participant UI as Dashboard (/moderation)
+    participant API as FastAPI Backend
+    participant DB as PostgreSQL DB
+
+    Admin->>UI: Navigate to /moderation
+    UI->>API: GET /api/v1/incidents & /api/v1/alerts (with Bearer JWT)
+    API->>API: Verify email is in MODERATOR_EMAILS
+    API->>DB: Query pending/flagged incidents
+    DB-->>UI: Display incident queue list
+    Admin->>UI: Select Incident ID
+    UI->>API: GET /api/v1/incidents/{id}
+    API-->>UI: Return raw content & ML scores
+    Admin->>UI: Enter Review Note & Select Action (Reviewed/Dismissed/Escalated)
+    UI->>API: PATCH /api/v1/incidents/{id}
+    API->>DB: Update status, note, reviewer_email, moderated_at
+    DB-->>Admin: Incident successfully processed & UI updates
+```
+
+1. **Incident Queue View (`/moderation`)**:  
+   Administrators are presented with a clean workspace queue displaying:
+   * **Incidents Grid**: List of flagged text blocks, tracking IDs, and timestamps.
+   * **Filters**: Quick sorting options by Status (`pending`, `reviewed`, `dismissed`, `escalated`) and Severity (`low`, `medium`, `high`).
+   * **High-Severity Alerts Log**: A dedicated warning monitor situated at the bottom of the page showing real-time notifications for critical safety breaches.
+
+2. **Detailed Incident Investigation (`/moderation/incidents/[id]`)**:  
+   Clicking on an incident loads a granular diagnostic page displaying:
+   * **Flagged Content**: The raw text that triggered the safety alert.
+   * **User Meta**: Unique identifiers for both the sender and target accounts.
+   * **Severity Metrics**: An overall normalized safety rating.
+   * **Detailed NLP Score Breakdown**: Individual metrics for:
+     * **Aggression Score**: Detects threat intensity.
+     * **Intent Score**: Assesses malice.
+     * **Repetition Score**: Evaluates targeted harassment across consecutive window spans.
+     * **Toxic, Insult, and Identity Attack Scores**: Calculated by the model.
+
+3. **Moderator Decision Panel**:  
+   To resolve the incident, the admin uses the action board at the bottom of the incident page:
+   * **Moderator Note**: An input field to write context or record rationale for the action taken (e.g., "User warning issued for identity hate speech").
+   * **Flag as Reviewed**: Confirms the content is toxic and marks the audit trail as completed.
+   * **Dismiss (Mark Safe)**: Discards the incident as a false positive, returning the content status to safe.
+   * **Escalate to Admin**: Heightens priority for upper-level intervention (e.g., account suspension, database exclusion).
+
+---
+
+## 🛠️ Step-by-Step Installation & Local Execution
+
+### Prerequisites
+* **Python**: Version 3.11+
+* **Node.js**: Version 18+ (with npm)
+* **Database**: PostgreSQL Instance (either local or via Supabase)
+
+### Step 1: Clone and Configure Environment Files
+
+Create the root environmental configuration file:
 ```powershell
 Copy-Item .env.example .env
 ```
 
-2. Create a Supabase project and run `supabase/schema.sql` in the Supabase SQL editor.
-
-3. Put your Supabase Postgres Session Pooler connection string into `.env`.
-
+Open `.env` and enter your database details and administrator emails:
 ```text
-DATABASE_URL=postgresql://postgres.YOUR_PROJECT_REF:YOUR_PERCENT_ENCODED_PASSWORD@aws-1-YOUR-REGION.pooler.supabase.com:5432/postgres?sslmode=require
+DATABASE_URL=postgresql+asyncpg://postgres:YOUR_PASSWORD@your-supabase-db.pooler.supabase.com:5432/postgres?sslmode=require
+MODERATOR_EMAILS=pascal@bowen.edu.ng,admin@example.com
 PIPELINE_MODE=direct
 SCORER_PROVIDER=auto
 ```
 
-`PIPELINE_MODE=direct` removes the need for Docker, RabbitMQ, and local PostgreSQL. The API processes the text and persists the incident during the request.
-If your database password contains reserved characters such as `$` or `%`, percent-encode them in `DATABASE_URL`.
-
-4. Configure backend and moderator values in `.env`.
-
-```text
-MODERATOR_EMAILS=your-moderator-email@example.com
-```
-
-If you change `.env` while the API is already running, restart `uvicorn`. The SQLAlchemy engine is created at startup, so the running process will not pick up a new `DATABASE_URL` until restart.
-5. Create `apps/web/.env.local` for the public Supabase web keys.
-
+Create the frontend config file `apps/web/.env.local`:
 ```text
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=replace-with-supabase-publishable-key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
 ```
 
-6. Install and run the backend.
+### Step 2: Initialize Supabase SQL Database
+Execute the database schema setup either via the Supabase SQL Editor or by running the local script located at:
+[supabase/schema.sql](file:///c:/Users/HP/Desktop/cybully/supabase/schema.sql)
 
+### Step 3: Run the FastAPI Backend Service
+Navigate to the api folder, install package dependencies in development mode, and start the Uvicorn web server:
 ```powershell
 cd services/api
 python -m pip install -e ".[dev]"
 uvicorn app.main:app --reload --port 8000
 ```
+* **Interactive APIs Docs**: Available at `http://localhost:8000/docs`
 
-7. Install and run the frontend.
-
+### Step 4: Run the Next.js Frontend
+From the root repository, install dependencies and boot the server:
 ```powershell
 npm install
 npm run dev:web
 ```
+* **Web Portal Address**: `http://localhost:3000`
 
-8. Open the apps.
+---
 
-- Web app: http://localhost:3000
-- FastAPI docs: http://localhost:8000/docs
+## 🧪 Verification, Testing & Pidgin English Localization
 
-For this mini-project setup, `SCORER_PROVIDER=auto` uses Detoxify when the ML dependency is available, and automatically falls back to the local heuristic scorer if Detoxify is unavailable or fails to initialize. To force Detoxify only, set `SCORER_PROVIDER=detoxify` and install `python -m pip install -e ".[dev,ml]"`.
+### Running Automated Test Suites
 
-## Backend Deployment (Railway)
+Validate security checks, scorers, database connectivity, and mock context handling:
+* **Backend Pytest**:
+  ```powershell
+  cd services/api
+  pytest
+  ```
+* **Frontend Checks**:
+  ```powershell
+  npm run lint:web
+  npm run test:web
+  ```
 
-The backend is ready for Railway Docker deployment from this monorepo.
+### Code-Mixed Nigerian Pidgin English Benchmark
 
-1. Create a new Railway project and choose **Deploy from GitHub repo**.
-2. Open the backend service settings and set:
-   - **Root Directory**: `services/api`
-   - **Builder**: `Dockerfile` (auto-detected from `services/api/Dockerfile`)
-3. Add service variables in Railway:
-   - `ENVIRONMENT=production`
-   - `PIPELINE_MODE=direct`
-   - `SCORER_PROVIDER=auto`
-   - `MODEL_INFERENCE_DEVICE=cpu`
-   - `RUN_MIGRATIONS=1`
-   - `DATABASE_URL` (Supabase session pooler URL with `sslmode=require`)
-   - `SUPABASE_URL`
-   - `SUPABASE_PUBLISHABLE_KEY`
-   - `SUPABASE_SECRET_KEY`
-   - `BACKEND_INTERNAL_TOKEN`
-   - `ALLOWED_CORS_ORIGINS` (your deployed frontend origin)
-   - `MODERATOR_EMAILS` (comma-separated moderator email allowlist)
-   - `ADMIN_NOTIFICATION_EMAIL`
-4. In service Networking, generate a public domain.
-5. Trigger a deploy. Container startup runs `alembic upgrade head` before booting Uvicorn.
+Because the project focuses on localized African cyberbullying detection, a localization benchmark has been provided inside the repository:
+* **Benchmark File**: [scripts/localization_samples.json](file:///c:/Users/HP/Desktop/cybully/scripts/localization_samples.json)
+* **Goal**: Runs code-mixed Pidgin messages (e.g., toxic insults in Pidgin English) to assess ML transformer efficacy vs. local heuristic text filters, logging detection rate performance.
 
-Optional: if you deploy from repo root instead of setting Root Directory, set `RAILWAY_DOCKERFILE_PATH=/services/api/Dockerfile`.
+---
 
-Health check endpoint: `GET /health`
+## 🚀 Deployed Environments
 
-## Manual Demo
+### 1. Backend Hosting (Hugging Face Spaces)
+The backend service is structured with a root [Dockerfile](file:///c:/Users/HP/Desktop/cybully/Dockerfile) exposing port `7860`, allowing free 24/7 hosting on Hugging Face Spaces:
+* **Deployment Type**: Docker SDK Template.
+* **Secrets**: Managed via Hugging Face Space settings variables (`DATABASE_URL`, `SUPABASE_URL`).
 
-1. Open http://localhost:3000.
-2. Sign in with a Supabase email/password account, or create one at `/sign-up`.
-3. New sign-ups must confirm their email before sign-in when Supabase email confirmation is enabled.
-4. To preview moderator screens immediately, sign in with an email listed in `MODERATOR_EMAILS`.
-5. Submit text at `/app`.
-6. In direct mode, the API writes the incident to Supabase during the request and returns a tracking id.
-7. Review incidents at `/moderation`.
-8. Open an incident detail page and mark it reviewed, dismissed, or escalated.
-9. Check high-severity alert stubs in the lower panel of `/moderation`.
+### 2. Frontend Hosting (Vercel)
+The Next.js client compiles as a serverless application, configured to communicate with the Hugging Face space endpoint using the `API_BASE_URL` parameter.
 
-You can also use `scripts/demo_payloads.http` against the FastAPI service directly. Prefer a Supabase bearer token for user-scoped calls. `X-Internal-Token` remains available as a fallback for local service-to-service or manual script use.
-
-## Backend Development
-
-Install dependencies in a Python 3.11 environment:
-
-```powershell
-cd services/api
-python -m pip install -e ".[dev]"
-pytest
-```
-
-If you prefer Alembic over the Supabase SQL editor, run migrations manually:
-
-```powershell
-cd services/api
-alembic upgrade head
-```
-
-Optional RabbitMQ worker entrypoints for future queue mode:
-
-```powershell
-python -m app.workers.inference
-python -m app.workers.persistence
-python -m app.workers.alerts
-```
-
-## Frontend Development
-
-Install and run the Next.js app:
-
-```powershell
-npm install
-npm run dev:web
-```
-
-Useful checks:
-
-```powershell
-npm run lint:web
-npm run build:web
-npm run test:web
-```
-
-## Localization Benchmark
-
-`scripts/localization_samples.json` contains a small Nigerian Pidgin/code-mixed sample set for the MVP benchmark. For the sprint acceptance pass, run these texts through `/app` or `scripts/demo_payloads.http`, compare the expected risk labels with the persisted model output, and record false negatives as known Detoxify baseline gaps.
-
-## API Summary
-
-- `POST /api/v1/analyze/text`: analyze text directly in mini mode, persist it, and return a tracking id.
-- `GET /api/v1/incidents`: list incidents with `severity`, `status`, `limit`, and `offset`.
-- `GET /api/v1/incidents/{id}`: fetch incident detail.
-- `PATCH /api/v1/incidents/{id}`: update moderation status and note, with reviewer identity and moderation timestamp persistence.
-- `GET /api/v1/alerts`: list stubbed high-severity alerts.
-
-All `/api/v1/*` backend routes require either a Supabase bearer token or `X-Internal-Token`. The Next.js server routes now forward the signed-in user's Supabase access token to FastAPI.
-
-## Current Status
-
-- Landing page, sign-in, sign-up, submit flow, moderation list, incident detail, and settings screens are implemented.
-- Supabase email/password auth is live.
-- FastAPI bearer-token validation against Supabase Auth is live.
-- Direct-mode incident persistence to Supabase Postgres is working with the Session Pooler configuration.
-- Stub alert persistence is wired, but production email delivery is still intentionally out of scope.
-
-## Optional Queue Mode
-
-The original asynchronous RabbitMQ pipeline is still available. Set:
-
-```text
-PIPELINE_MODE=queue
-SCORER_PROVIDER=detoxify
-RABBITMQ_URL=...
-```
-
-Then run the API plus `app.workers.inference`, `app.workers.persistence`, and `app.workers.alerts`. The included `docker-compose.yml` remains available for a fuller local infrastructure setup, but it is no longer required for the Supabase mini-project path.
+---
+*For questions, academic reviews, or supervisor sign-offs, please reach out to **Pascal Aderinola** or the **Bowen University Computer Science Department** faculty advisors.*

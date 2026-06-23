@@ -11,12 +11,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
     }
 
-    // Mock validation rules:
-    // 1. Must be in MODERATOR_EMAILS or match user.json (pascaladerinola082@gmail.com)
-    // 2. Enforce the password "12345678" as defined in user.json
-    const isModerator = isModeratorEmail(email) || email === "pascaladerinola082@gmail.com";
+    // Resolve user.json location dynamically
+    const path = require("path");
+    const fs = require("fs");
+    let mockPassword = "12345678";
+    let mockUserEmail = "pascaladerinola082@gmail.com";
+
+    try {
+      const cwd = process.cwd();
+      const candidates = [
+        path.join(cwd, "user.json"),
+        path.join(cwd, "../user.json"),
+        path.join(cwd, "../../user.json"),
+        "c:/Users/HP/Desktop/cybully/user.json"
+      ];
+      let userJsonPath = "";
+      for (const p of candidates) {
+        if (fs.existsSync(p)) {
+          userJsonPath = p;
+          break;
+        }
+      }
+      if (userJsonPath) {
+        const raw = fs.readFileSync(userJsonPath, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (parsed.password) mockPassword = String(parsed.password);
+        if (parsed.email) mockUserEmail = String(parsed.email).trim().toLowerCase();
+      }
+    } catch (err) {
+      console.warn("[AUTH FALLBACK] Error reading user.json:", err);
+    }
+
+    const isModerator = isModeratorEmail(email) || email === mockUserEmail;
     
-    if (isModerator && password === "12345678") {
+    if (isModerator && password === mockPassword) {
       const mockSession = {
         id: "mock-user-" + Math.random().toString(36).substring(2, 9),
         email,
@@ -39,7 +67,7 @@ export async function POST(request: Request) {
       return response;
     }
 
-    return NextResponse.json({ error: "Invalid email or password. Hint: check MODERATOR_EMAILS and use password '12345678'." }, { status: 401 });
+    return NextResponse.json({ error: `Invalid email or password. Hint: check MODERATOR_EMAILS and use password configured for ${email}.` }, { status: 401 });
   } catch (error) {
     console.error("[AUTH FALLBACK] Error in mock login route:", error);
     return NextResponse.json({ error: "Internal server error during mock sign-in." }, { status: 500 });

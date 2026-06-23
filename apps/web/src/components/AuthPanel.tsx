@@ -188,9 +188,16 @@ export function AuthPanel({ mode, appName }: AuthPanelProps) {
           />
         </div>
         <div>
-          <label htmlFor="password" className="ui-label">
-            Password
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="ui-label">
+              Password
+            </label>
+            {!isSignUp && (
+              <Link href="/forgot-password" className="text-xs font-bold text-brand hover:underline">
+                Forgot password?
+              </Link>
+            )}
+          </div>
           <input
             id="password"
             name="password"

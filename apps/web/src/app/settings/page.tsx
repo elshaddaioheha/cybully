@@ -1,9 +1,11 @@
 import { AppShell } from "@/components/AppShell";
 import { SignOutButton } from "@/components/SignOutButton";
+import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 import { requireUser } from "@/lib/guards";
 
 export default async function SettingsPage() {
   const session = await requireUser();
+  const isMock = session.accessToken === "mock-access-token";
 
   return (
     <AppShell session={session}>
@@ -23,7 +25,10 @@ export default async function SettingsPage() {
             <dd className="rounded-xl bg-field px-4 py-3 capitalize text-ink">{session.user?.role}</dd>
           </div>
         </dl>
-        <div className="mt-8">
+
+        <ChangePasswordForm email={session.user?.email ?? ""} isMock={isMock} />
+
+        <div className="mt-8 pt-6 border-t border-line">
           <SignOutButton variant="danger" />
         </div>
       </section>
