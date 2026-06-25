@@ -87,7 +87,7 @@ sequenceDiagram
     participant UI as Dashboard (/moderation)
     participant API as FastAPI Backend
     participant DB as PostgreSQL DB
-
+ 
     Admin->>UI: Navigate to /moderation
     UI->>API: GET /api/v1/incidents & /api/v1/alerts (with Bearer JWT)
     API->>API: Verify email is in MODERATOR_EMAILS
@@ -203,15 +203,150 @@ Because the project focuses on localized African cyberbullying detection, a loca
 
 ---
 
-## 🚀 Deployed Environments
+## 🚀 Deployed Environments & Production Playbooks
 
-### 1. Backend Hosting (Hugging Face Spaces)
-The backend service is structured with a root [Dockerfile](file:///c:/Users/HP/Desktop/cybully/Dockerfile) exposing port `7860`, allowing free 24/7 hosting on Hugging Face Spaces:
-* **Deployment Type**: Docker SDK Template.
-* **Secrets**: Managed via Hugging Face Space settings variables (`DATABASE_URL`, `SUPABASE_URL`).
+### 📦 Option A: Backend Hosting on Hugging Face Spaces (24/7 Free CPU)
+Hugging Face Spaces allows you to run custom Docker containers for free without service sleeps or suspensions.
 
-### 2. Frontend Hosting (Vercel)
-The Next.js client compiles as a serverless application, configured to communicate with the Hugging Face space endpoint using the `API_BASE_URL` parameter.
+#### 1. Create the Space on Hugging Face
+1. Sign in to [Hugging Face](https://huggingface.co/).
+2. Select **New Space** from your profile.
+3. Configure the Space:
+   * **SDK**: Select **Docker** (Critical).
+   * **Docker Template**: Select **Blank**.
+   * **Space Hardware**: Choose **CPU basic (Free)**.
+   * **Visibility**: Choose **Public** (you can securely hide credentials).
+
+#### 2. Configure Environment Variables & Secrets
+1. Navigate to the **Settings** tab of your Space.
+2. Scroll to **Variables and Secrets**.
+3. Add the following as **Secrets** (hidden credentials):
+   * `DATABASE_URL` = `postgresql://your_postgres_pooler_url`
+   * `SUPABASE_URL` = `https://your-supabase-url.supabase.co`
+   * `SUPABASE_PUBLISHABLE_KEY` = `your_anon_key`
+   * `SUPABASE_SECRET_KEY` = `your_service_role_key`
+4. Add the following as **Variables** (public configs):
+   * `PIPELINE_MODE` = `direct`
+   * `SCORER_PROVIDER` = `heuristic`
+
+#### 3. Push Code to Hugging Face
+Hugging Face Spaces are backed by a git repository. You can push commits directly:
+```bash
+git remote add hf https://huggingface.co/spaces/YOUR_USERNAME/YOUR_SPACE_NAME
+git push -f hf main
+```
+
+#### 4. Link Next.js Frontend (Vercel)
+1. Copy the Direct URL of your space (e.g., `https://YOUR_USERNAME-YOUR_SPACE_NAME.hf.space`).
+2. Go to your frontend hosting platform (e.g., Vercel) and update the `API_BASE_URL` environment variable to point to this URL.
+3. Redeploy your frontend.
 
 ---
-*For questions, academic reviews, or supervisor sign-offs, please reach out to **Pascal Aderinola** or the **Bowen University Computer Science Department** faculty advisors.*
+
+### ☁️ Option B: Monorepo Hosting on Google Cloud Run (Scale-to-Zero)
+This playbook explains how to deploy both the FastAPI backend and Next.js frontend to Google Cloud Run, scaling to 0 when idle to optimize resource costs.
+
+#### 1. Setup GCP Artifact Registry
+Configure GCP CLI and initialize a Docker registry:
+```bash
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com
+
+gcloud artifacts repositories create cybully-repo \
+    --repository-format=docker \
+    --location=us-central1 \
+    --description="Docker repository for CyBully services"
+
+gcloud auth configure-docker us-central1-docker.pkg.dev
+```
+
+#### 2. Deploy the FastAPI Backend
+Build and deploy the backend container from the **monorepo root**:
+```bash
+# Build and Tag
+docker build -t us-central1-docker.pkg.dev/YOUR_PROJECT_ID/cybully-repo/api:latest -f services/api/Dockerfile services/api
+
+# Push to Registry
+docker push us-central1-docker.pkg.dev/YOUR_PROJECT_ID/cybully-repo/api:latest
+
+# Deploy with min instances set to 0 (Scale to zero)
+gcloud run deploy cybully-api \
+    --image us-central1-docker.pkg.dev/YOUR_PROJECT_ID/cybully-repo/api:latest \
+    --platform managed \
+    --region us-central1 \
+    --allow-unauthenticated \
+    --min-instances 0 \
+    --max-instances 2 \
+    --memory 512Mi \
+    --cpu 1 \
+    --set-env-vars="PIPELINE_MODE=direct,SCORER_PROVIDER=heuristic,DATABASE_URL=postgresql://your_postgres_url"
+```
+*Note down the printed service URL (e.g., `https://cybully-api-xxxx-uc.a.run.app`).*
+
+#### 3. Deploy the Next.js Frontend
+Build and deploy the frontend from the **monorepo root**:
+```bash
+# Build and Tag
+docker build -t us-central1-docker.pkg.dev/YOUR_PROJECT_ID/cybully-repo/web:latest -f apps/web/Dockerfile apps/web
+
+# Push to Registry
+docker push us-central1-docker.pkg.dev/YOUR_PROJECT_ID/cybully-repo/web:latest
+
+# Deploy pointing API_BASE_URL to the backend URL
+gcloud run deploy cybully-web \
+    --image us-central1-docker.pkg.dev/YOUR_PROJECT_ID/cybully-repo/web:latest \
+    --platform managed \
+    --region us-central1 \
+    --allow-unauthenticated \
+    --min-instances 0 \
+    --max-instances 2 \
+    --memory 512Mi \
+    --cpu 1 \
+    --set-env-vars="API_BASE_URL=https://cybully-api-xxxx-uc.a.run.app,NEXT_PUBLIC_SUPABASE_URL=https://your-supabase-url.supabase.co,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-anon-key,MODERATOR_EMAILS=moderator@example.com"
+```
+
+---
+
+## 🗺️ MVP Roadmap & Current Status
+
+### Current MVP Implementation State
+* **Root Monorepo Scaffold**: Structured with `apps/web` (Next.js), `services/api` (FastAPI), and `scripts` directories.
+* **Direct Mode**: Persisting and analyzing incidents directly inside the request thread (requires no background worker dependencies).
+* **Supabase Connection**: Fully validated database reads/writes using direct connection pools.
+* **Security & Auth**: Complete JWT token authentication validation and forgot-password panels.
+* **Pidgin Benchmark Fixtures**: Live dataset located at `scripts/localization_samples.json`.
+
+### Roadmapped Phases
+
+```mermaid
+timeline
+    title MVP Execution Phases
+    Phase 0 - Scaffold : Monorepo initialization : Next.js framework shell : FastAPI backend setup
+    Phase 1 - Integration : Supabase schema setup : Scorer fallback validation : Direct pipeline mode
+    Phase 2 - Admin Features : Role check allowance list : Incident dashboard filters : Decision log persistence
+    Phase 3 - Benchmarking : Nigerian Pidgin benchmarks : Token resets checks : Direct mode validation
+```
+
+#### Phase 0: Stabilize the Scaffold
+* Align config templates and roadmaps.
+* Re-run end-to-end browser workflows to check authentication persistence.
+
+#### Phase 1: Validate Supabase Direct Backend
+* Launch the FastAPI API server with `PIPELINE_MODE=direct`.
+* Run test calls from `scripts/demo_payloads.http` and check DB writes.
+
+#### Phase 1B: Asynchronous Queue Mode (Optional)
+* Switch `PIPELINE_MODE` to `queue` using RabbitMQ and parallel worker workers (`app.workers.inference`, `app.workers.persistence`, `app.workers.alerts`).
+
+#### Phase 2: Validate Frontend App Shell
+* Sign-in tests using allowed emails.
+* Test queue status modifications and moderator feedback forms.
+
+#### Phase 3: MVP Acceptance Pass
+* Run multi-scenario tests (benign, repeated harassments, toxic, and localization checks).
+* Assess detection metrics using `localization_samples.json`.
+
+#### Phase 4: Post-MVP Hardening
+* Integrate live email service providers (e.g., SendGrid).
+* Add standard rate limiting, API pagination limits, and active telemetry correlation identifiers.
