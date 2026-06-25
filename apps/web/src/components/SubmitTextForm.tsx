@@ -27,8 +27,22 @@ export function SubmitTextForm() {
   const [isSubmitting, setSubmitting] = useState(false);
   const [isFallback, setIsFallback] = useState(false);
   const [history, setHistory] = useState<ScannedMessage[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<"history" | "notifications">("history");
 
-  // Load history from localStorage on mount
+  async function fetchNotifications() {
+    try {
+      const res = await fetch("/api/notifications");
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.items || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch notifications:", e);
+    }
+  }
+
+  // Load history from localStorage on mount & notifications
   useEffect(() => {
     try {
       const stored = localStorage.getItem("cybully_user_scans");
@@ -38,7 +52,28 @@ export function SubmitTextForm() {
     } catch (e) {
       console.error("Failed to load user scan history:", e);
     }
+
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10000);
+    return () => clearInterval(interval);
   }, []);
+
+  async function markAsRead(id: string) {
+    try {
+      const res = await fetch(`/api/notifications/${id}`, {
+        method: "PATCH"
+      });
+      if (res.ok) {
+        setNotifications(prev =>
+          prev.map(n => (n.id === id ? { ...n, read: true } : n))
+        );
+      }
+    } catch (e) {
+      console.error("Failed to mark notification as read:", e);
+    }
+  }
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -255,14 +290,39 @@ export function SubmitTextForm() {
         </section>
       </div>
 
-      {/* Session Activity Log */}
+      {/* Session Activity Log & Notifications */}
       <section className="ui-card">
-        <div className="flex items-center justify-between">
-          <h2 className="ui-section-title flex items-center gap-2">
-            <HugeiconsIcon icon={TaskDaily02Icon} size={20} strokeWidth={1.9} aria-hidden />
-            Session Scan Activity Log
-          </h2>
-          {history.length > 0 ? (
+        <div className="flex flex-col gap-4 border-b border-line pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex gap-4">
+            <button
+              onClick={() => setActiveTab("history")}
+              className={`pb-2 text-sm font-bold border-b-2 transition-all ${
+                activeTab === "history"
+                  ? "border-brand text-brand"
+                  : "border-transparent text-muted hover:text-ink"
+              }`}
+              type="button"
+            >
+              Session Scan Activity Log
+            </button>
+            <button
+              onClick={() => setActiveTab("notifications")}
+              className={`pb-2 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+                activeTab === "notifications"
+                  ? "border-brand text-brand"
+                  : "border-transparent text-muted hover:text-ink"
+              }`}
+              type="button"
+            >
+              Notification Inbox
+              {unreadCount > 0 && (
+                <span className="inline-flex items-center justify-center rounded-full bg-red-600 px-2 py-0.5 text-xxs font-bold text-white leading-none">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+          </div>
+          {activeTab === "history" && history.length > 0 ? (
             <button
               onClick={clearHistory}
               className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-700 transition-colors"
@@ -273,55 +333,97 @@ export function SubmitTextForm() {
             </button>
           ) : null}
         </div>
-        <p className="mt-2 text-sm text-muted">
-          Your browser&apos;s local cache matches the last 10 items processed in this session.
-        </p>
 
-        <div className="mt-5 overflow-x-auto">
-          <table className="min-w-full divide-y divide-line text-sm">
-            <thead className="bg-field text-left text-xs font-bold uppercase text-muted">
-              <tr>
-                <th className="px-4 py-3">Timestamp</th>
-                <th className="px-4 py-3">Recipient</th>
-                <th className="px-4 py-3">Message Preview</th>
-                <th className="px-4 py-3">Tracking ID</th>
-                <th className="px-4 py-3">Database Mode</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {history.map((item) => (
-                <tr key={item.id} className="hover:bg-field/50 transition-colors">
-                  <td className="px-4 py-3 text-xs text-muted">
-                    {new Date(item.timestamp).toLocaleTimeString()}
-                  </td>
-                  <td className="px-4 py-3 text-ink font-semibold">{item.targetUserId}</td>
-                  <td className="px-4 py-3 text-muted max-w-xs truncate" title={item.text}>
-                    {item.text}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-ink">{item.id}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold ${
-                        item.isFallback
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-emerald-100 text-emerald-800"
-                      }`}
-                    >
-                      {item.isFallback ? "Fallback Log" : "Live Store"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {history.length === 0 ? (
+        {activeTab === "history" ? (
+          <div className="mt-5 overflow-x-auto">
+            <table className="min-w-full divide-y divide-line text-sm">
+              <thead className="bg-field text-left text-xs font-bold uppercase text-muted">
                 <tr>
-                  <td className="px-4 py-8 text-center text-muted" colSpan={5}>
-                    No safety scans logged in this session yet. Submit text above to begin.
-                  </td>
+                  <th className="px-4 py-3">Timestamp</th>
+                  <th className="px-4 py-3">Recipient</th>
+                  <th className="px-4 py-3">Message Preview</th>
+                  <th className="px-4 py-3">Tracking ID</th>
+                  <th className="px-4 py-3">Database Mode</th>
                 </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {history.map((item) => (
+                  <tr key={item.id} className="hover:bg-field/50 transition-colors">
+                    <td className="px-4 py-3 text-xs text-muted">
+                      {new Date(item.timestamp).toLocaleTimeString()}
+                    </td>
+                    <td className="px-4 py-3 text-ink font-semibold">{item.targetUserId}</td>
+                    <td className="px-4 py-3 text-muted max-w-xs truncate" title={item.text}>
+                      {item.text}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-ink">{item.id}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold ${
+                          item.isFallback
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-emerald-100 text-emerald-800"
+                        }`}
+                      >
+                        {item.isFallback ? "Fallback Log" : "Live Store"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {history.length === 0 ? (
+                  <tr>
+                    <td className="px-4 py-8 text-center text-muted" colSpan={5}>
+                      No safety scans logged in this session yet. Submit text above to begin.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="mt-5 space-y-3">
+            {notifications.map((notif) => (
+              <div
+                key={notif.id}
+                className={`flex items-start justify-between gap-4 p-4 rounded-xl border transition-all duration-200 ${
+                  notif.read
+                    ? "bg-white border-line"
+                    : "bg-brand/5 border-brand/20 shadow-sm"
+                }`}
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`h-2 w-2 rounded-full shrink-0 ${
+                        notif.read ? "bg-muted/30" : "bg-brand animate-pulse"
+                      }`}
+                    />
+                    <p className="text-xs text-muted">
+                      {new Date(notif.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <p className={`text-sm text-ink leading-relaxed ${!notif.read ? "font-bold" : ""}`}>
+                    {notif.message}
+                  </p>
+                </div>
+                {!notif.read && (
+                  <button
+                    onClick={() => markAsRead(notif.id)}
+                    className="text-xs font-bold text-brand hover:underline shrink-0"
+                    type="button"
+                  >
+                    Mark read
+                  </button>
+                )}
+              </div>
+            ))}
+            {notifications.length === 0 ? (
+              <p className="py-8 text-center text-muted text-sm">
+                Your notification inbox is currently empty.
+              </p>
+            ) : null}
+          </div>
+        )}
       </section>
     </div>
   );

@@ -1,5 +1,14 @@
 import type { Incident, Alert, IncidentStatus, SeverityLevel, IncidentListResponse, AlertListResponse } from "@/types";
 
+export type Notification = {
+  id: string;
+  user_id: string;
+  incident_id: string;
+  message: string;
+  read: boolean;
+  created_at: string;
+};
+
 // Simple offensive keywords for local heuristic scanning
 const TOXIC_KEYWORDS = ["kill", "hate", "idiot", "loser", "waste", "garbage", "trash", "stupid", "ugly", "dumb", "shut up", "worst"];
 const INSULT_KEYWORDS = ["idiot", "loser", "stupid", "ugly", "dumb", "jerk", "moron"];
@@ -14,6 +23,8 @@ function generateUUID(): string {
 class FallbackDatabase {
   private incidents: Incident[] = [];
   private alerts: Alert[] = [];
+  private notifications: Notification[] = [];
+  private restrictedUsers: Set<string> = new Set();
   private initialized = false;
 
   constructor() {
@@ -218,7 +229,77 @@ class FallbackDatabase {
     };
 
     this.incidents[index] = updated;
+
+    // Create a notification for the reporter (user_id)
+    this.notifications.push({
+      id: "fallback-notif-" + Math.random().toString(36).substring(2, 9),
+      user_id: existing.user_id,
+      incident_id: id,
+      message: `Your submitted scan report (ID: ${id}) was reviewed by a moderator and marked as "${status}". ${reviewNote ? `Note: ${reviewNote}` : ""}`,
+      read: false,
+      created_at: new Date().toISOString()
+    });
+
+    // Handle restriction: if status is reviewed or escalated, restrict the offender
+    if (status === "reviewed" || status === "escalated") {
+      this.restrictedUsers.add(existing.user_id);
+      
+      // Also notify the offender they are restricted
+      this.notifications.push({
+        id: "fallback-notif-" + Math.random().toString(36).substring(2, 9),
+        user_id: existing.user_id,
+        incident_id: id,
+        message: `Your account has been restricted due to safety violations in scan (ID: ${id}). Status: ${status}.`,
+        read: false,
+        created_at: new Date().toISOString()
+      });
+    }
+
     return updated;
+  }
+
+  public listNotifications(userId: string): Notification[] {
+    this.ensureInitialized();
+    return this.notifications
+      .filter(n => n.user_id === userId)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
+
+  public markNotificationRead(notifId: string): boolean {
+    this.ensureInitialized();
+    const notif = this.notifications.find(n => n.id === notifId);
+    if (notif) {
+      notif.read = true;
+      return true;
+    }
+    return false;
+  }
+
+  public isUserRestricted(userId: string): boolean {
+    this.ensureInitialized();
+    return this.restrictedUsers.has(userId);
+  }
+
+  public liftRestriction(userId: string): boolean {
+    this.ensureInitialized();
+    return this.restrictedUsers.delete(userId);
+  }
+
+  public bulkUpdateIncidents(
+    ids: string[],
+    status: IncidentStatus,
+    reviewNote: string | null,
+    reviewerUser: { id: string; email: string | null }
+  ): Incident[] {
+    this.ensureInitialized();
+    const updatedIncidents: Incident[] = [];
+    for (const id of ids) {
+      const updated = this.updateIncident(id, status, reviewNote, reviewerUser);
+      if (updated) {
+        updatedIncidents.push(updated);
+      }
+    }
+    return updatedIncidents;
   }
 
   public listAlerts(query?: URLSearchParams): AlertListResponse {

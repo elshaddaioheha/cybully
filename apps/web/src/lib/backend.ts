@@ -58,9 +58,11 @@ export async function backendFetch<T>(path: string, options: BackendFetchOptions
   if (useFallback) {
     console.warn(`[API FALLBACK] Backend unreachable/5xx for ${path}. Using offline fallback. Error:`, fetchError || `HTTP ${response?.status}`);
 
-    const isIncidents = path.startsWith("/api/v1/incidents");
+    const isBulkUpdate = path.startsWith("/api/v1/incidents/bulk");
+    const isIncidents = !isBulkUpdate && path.startsWith("/api/v1/incidents");
     const isAlerts = path.startsWith("/api/v1/alerts");
     const isAnalyze = path.startsWith("/api/v1/analyze/text");
+    const isNotifications = path.startsWith("/api/v1/notifications");
 
     if (isAnalyze && options.method === "POST") {
       const body = options.body as any;
@@ -70,6 +72,22 @@ export async function backendFetch<T>(path: string, options: BackendFetchOptions
 
       const res = fallbackDb.analyzeText(text, targetUserId, userId);
       return { ...res, fallback: true } as unknown as T;
+    }
+
+    if (isBulkUpdate && options.method === "PATCH") {
+      const body = options.body as any;
+      let reviewer = { id: "mock-reviewer", email: "pascaladerinola082@gmail.com" as string | null };
+      try {
+        const { getSession } = await import("@/lib/auth");
+        const session = await getSession();
+        if (session?.user) {
+          reviewer = { id: session.user.id, email: session.user.email };
+        }
+      } catch (e) {
+        console.error("[API FALLBACK] Failed to resolve session for bulk reviewer logging:", e);
+      }
+      const res = fallbackDb.bulkUpdateIncidents(body.ids, body.status, body.review_note, reviewer);
+      return { items: res, fallback: true } as unknown as T;
     }
 
     if (isIncidents) {
@@ -109,6 +127,31 @@ export async function backendFetch<T>(path: string, options: BackendFetchOptions
     if (isAlerts) {
       const res = fallbackDb.listAlerts(options.query);
       return { ...res, fallback: true } as unknown as T;
+    }
+
+    if (isNotifications) {
+      if (options.method === "PATCH") {
+        const parts = path.split("/");
+        const id = parts[4]; // ['', 'api', 'v1', 'notifications', '{id}']
+        if (id) {
+          const res = fallbackDb.markNotificationRead(id);
+          return { success: res, fallback: true } as unknown as T;
+        }
+        throw new Error("Missing notification ID for PATCH");
+      } else {
+        let userId = "fallback-user";
+        try {
+          const { getSession } = await import("@/lib/auth");
+          const session = await getSession();
+          if (session?.user) {
+            userId = session.user.id;
+          }
+        } catch (e) {
+          console.error("[API FALLBACK] Failed to resolve session for notifications list:", e);
+        }
+        const res = fallbackDb.listNotifications(userId);
+        return { items: res, fallback: true } as unknown as T;
+      }
     }
 
     throw new Error(`Backend fetch failed and route ${path} not handled by fallback.`);

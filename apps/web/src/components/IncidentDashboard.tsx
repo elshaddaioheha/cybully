@@ -29,6 +29,49 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
   const [incidents, setIncidents] = useState(initialIncidents);
   const [alerts, setAlerts] = useState(initialAlerts);
   const [isRefreshing, setRefreshing] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkNote, setBulkNote] = useState("");
+  const [isBulkSubmitting, setBulkSubmitting] = useState(false);
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allFilteredIds = filteredIncidents.map((inc) => inc.id);
+      setSelectedIds(allFilteredIds);
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleBulkAction = async (targetStatus: IncidentStatus) => {
+    if (selectedIds.length === 0) return;
+    setBulkSubmitting(true);
+    try {
+      const response = await fetch("/api/incidents/bulk", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: selectedIds,
+          status: targetStatus,
+          review_note: bulkNote || null
+        })
+      });
+      if (response.ok) {
+        setSelectedIds([]);
+        setBulkNote("");
+        refresh();
+      }
+    } catch (e) {
+      console.error("Bulk action failed:", e);
+    } finally {
+      setBulkSubmitting(false);
+    }
+  };
 
   const query = useMemo(() => {
     const params = new URLSearchParams({ limit: "25" });
@@ -203,6 +246,59 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
                 className="ui-input w-full"
               />
             </div>
+
+            {selectedIds.length > 0 && (
+              <div className="mt-4 rounded-xl border border-brand/20 bg-brand/5 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-ink">
+                    Bulk Action Triage Queue ({selectedIds.length} items selected)
+                  </h4>
+                  <button
+                    onClick={() => setSelectedIds([])}
+                    className="text-xs font-bold text-muted hover:text-ink hover:underline"
+                    type="button"
+                  >
+                    Clear selection
+                  </button>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <input
+                    type="text"
+                    value={bulkNote}
+                    onChange={(e) => setBulkNote(e.target.value)}
+                    placeholder="Enter a shared review note for all selected incidents..."
+                    className="ui-input flex-1 h-9 text-xs"
+                    disabled={isBulkSubmitting}
+                  />
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => handleBulkAction("reviewed")}
+                      disabled={isBulkSubmitting}
+                      className="ui-secondary-button h-9 px-3 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 border-transparent transition-all"
+                      type="button"
+                    >
+                      Reviewed
+                    </button>
+                    <button
+                      onClick={() => handleBulkAction("dismissed")}
+                      disabled={isBulkSubmitting}
+                      className="ui-secondary-button h-9 px-3 text-xs font-bold bg-gray-500 text-white hover:bg-gray-600 border-transparent transition-all"
+                      type="button"
+                    >
+                      Dismiss
+                    </button>
+                    <button
+                      onClick={() => handleBulkAction("escalated")}
+                      disabled={isBulkSubmitting}
+                      className="ui-secondary-button h-9 px-3 text-xs font-bold bg-red-600 text-white hover:bg-red-700 border-transparent transition-all"
+                      type="button"
+                    >
+                      Escalate
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
 
           <section className="ui-card overflow-hidden p-0">
@@ -210,6 +306,17 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
               <table className="min-w-full divide-y divide-line text-sm">
                 <thead className="bg-field text-left text-xs font-bold uppercase tracking-normal text-muted">
                   <tr>
+                    <th className="px-6 py-4 w-10">
+                      <input
+                        type="checkbox"
+                        checked={
+                          filteredIncidents.length > 0 &&
+                          filteredIncidents.every((inc) => selectedIds.includes(inc.id))
+                        }
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        className="rounded border-line text-brand focus:ring-brand h-4 w-4 cursor-pointer"
+                      />
+                    </th>
                     <th className="px-6 py-4">Severity</th>
                     <th className="px-6 py-4">Risk Score</th>
                     <th className="px-6 py-4">Participants</th>
@@ -221,6 +328,14 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
                 <tbody className="divide-y divide-line">
                   {filteredIncidents.map((incident) => (
                     <tr key={incident.id} className="hover:bg-field/20 transition-colors">
+                      <td className="px-6 py-4 w-10">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(incident.id)}
+                          onChange={() => handleToggleSelect(incident.id)}
+                          className="rounded border-line text-brand focus:ring-brand h-4 w-4 cursor-pointer"
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <SeverityBadge severity={incident.severity_level} />
                       </td>
@@ -256,7 +371,7 @@ export function IncidentDashboard({ initialIncidents, initialAlerts }: IncidentD
                   ))}
                   {filteredIncidents.length === 0 ? (
                     <tr>
-                      <td className="px-6 py-12 text-center text-muted" colSpan={6}>
+                      <td className="px-6 py-12 text-center text-muted" colSpan={7}>
                         {searchQuery ? "No incidents matches your search criteria." : "No flagged incidents found in queue."}
                       </td>
                     </tr>
